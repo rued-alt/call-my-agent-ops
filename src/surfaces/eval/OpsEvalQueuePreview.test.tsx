@@ -265,4 +265,82 @@ describe('OpsEvalQueuePreview', () => {
       expect(card).toBeInTheDocument()
     })
   })
+
+  // ── j/k/e/r keyboard shortcuts (operator power-user layer) ──────────
+  describe('keyboard shortcuts (j/k/e/r)', () => {
+    function getActiveCallId(): string | null {
+      const card = document.querySelector('[data-region="ops-eval-card"]')
+      return card?.getAttribute('data-call-id') ?? null
+    }
+
+    it('j advances to the next queue item without committing', () => {
+      renderEval()
+      const before = getActiveCallId()
+      expect(before).not.toBeNull()
+      fireEvent.keyDown(window, { key: 'j' })
+      const after = getActiveCallId()
+      expect(after).not.toBe(before)
+    })
+
+    it('J (uppercase) also advances', () => {
+      renderEval()
+      const before = getActiveCallId()
+      fireEvent.keyDown(window, { key: 'J' })
+      expect(getActiveCallId()).not.toBe(before)
+    })
+
+    it('k walks back to the previous queue item', () => {
+      renderEval()
+      const first = getActiveCallId()
+      fireEvent.keyDown(window, { key: 'j' })
+      const second = getActiveCallId()
+      expect(second).not.toBe(first)
+      fireEvent.keyDown(window, { key: 'k' })
+      expect(getActiveCallId()).toBe(first)
+    })
+
+    it('k at the top of the queue is a no-op (no crash, cursor stays)', () => {
+      renderEval()
+      const before = getActiveCallId()
+      fireEvent.keyDown(window, { key: 'k' })
+      expect(getActiveCallId()).toBe(before)
+    })
+
+    it('e advances to next call when rubric is fully answered', () => {
+      renderEval()
+      const startId = getActiveCallId()
+      // Answer all 4 questions via the 1/2/3 layer
+      fireEvent.keyDown(window, { key: '1' })
+      fireEvent.keyDown(window, { key: '1' })
+      fireEvent.keyDown(window, { key: '1' })
+      fireEvent.keyDown(window, { key: '1' })
+      // Commit via 'e'
+      fireEvent.keyDown(window, { key: 'e' })
+      expect(getActiveCallId()).not.toBe(startId)
+    })
+
+    it('e is a no-op when rubric is incomplete', () => {
+      renderEval()
+      const startId = getActiveCallId()
+      fireEvent.keyDown(window, { key: '1' })
+      fireEvent.keyDown(window, { key: '1' })
+      fireEvent.keyDown(window, { key: 'e' })
+      expect(getActiveCallId()).toBe(startId)
+    })
+
+    it('r resets the in-progress rubric so e is no longer accepted', () => {
+      renderEval()
+      const startId = getActiveCallId()
+      // Build a full rubric
+      fireEvent.keyDown(window, { key: '1' })
+      fireEvent.keyDown(window, { key: '1' })
+      fireEvent.keyDown(window, { key: '1' })
+      fireEvent.keyDown(window, { key: '1' })
+      // Reset
+      fireEvent.keyDown(window, { key: 'r' })
+      // e should now be ignored — same card stays active
+      fireEvent.keyDown(window, { key: 'e' })
+      expect(getActiveCallId()).toBe(startId)
+    })
+  })
 })

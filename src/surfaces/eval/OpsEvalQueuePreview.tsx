@@ -184,6 +184,50 @@ export function OpsEvalQueuePreview({ t, staff = DEFAULT_OPS_STAFF }: OpsEvalQue
   useEffect(() => {
     function handler(e: KeyboardEvent) {
       if (done) return
+      // Ignore keystrokes when the operator is typing in an input/textarea
+      // (e.g. the PII-reveal reason field). Otherwise j/k would corrupt
+      // typing flow. We treat <input>, <textarea>, and contentEditable
+      // hosts as "typing in progress" and skip the shortcut layer.
+      const target = e.target as HTMLElement | null
+      if (target) {
+        const tag = target.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable) {
+          return
+        }
+      }
+      // ── Vim-style navigation (j/k) + commit (e) + reset-rating (r) ──
+      // Locked alongside the 1/2/3 + ArrowRight + Enter set; both
+      // shortcut layers coexist so operators can use whichever feels
+      // faster. j/k = next/prev call; e = commit (when all 4
+      // questions answered); r = clear the in-progress rubric.
+      if (e.key === 'j' || e.key === 'J') {
+        // Skip to the next call without recording a rating
+        commitRating(false)
+        return
+      }
+      if (e.key === 'k' || e.key === 'K') {
+        // Walk back one entry in the queue — does NOT un-rate; the
+        // operator can still re-rate from the rubric on the prior card
+        if (cursor > 0) {
+          setCursor((c) => Math.max(0, c - 1))
+        }
+        return
+      }
+      if (e.key === 'e' || e.key === 'E') {
+        if (
+          rating.understood &&
+          rating.answered &&
+          rating.tone &&
+          rating.approved
+        ) {
+          commitRating(true)
+        }
+        return
+      }
+      if (e.key === 'r' || e.key === 'R') {
+        setRating(EMPTY_RATING)
+        return
+      }
       if (e.key === 'ArrowRight') {
         commitRating(false)
         return
