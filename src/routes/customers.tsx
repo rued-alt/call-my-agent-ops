@@ -4,6 +4,8 @@ import { TOKENS } from '../lib/brand'
 import { readRoleFromMetadata } from '../lib/auth/roles'
 import { OpsChrome, DEFAULT_OPS_STAFF } from '../components/chrome/OpsChrome'
 import type { OpsStaff, OpsRole } from '../components/chrome/OpsChrome'
+import { OpsCustomersPreview } from '../surfaces/customers/OpsCustomersPreview'
+import { OPS_ALERTS } from '../data/opsFixture'
 
 export const Route = createFileRoute('/customers')({
   component: CustomersRoute,
@@ -33,12 +35,19 @@ function CustomersPage() {
     role,
     twoFactorOn: user?.twoFactorEnabled ?? DEFAULT_OPS_STAFF.twoFactorOn,
   }
+
+  const openAlertCount = OPS_ALERTS.filter((a) => !a.resolved).length
+
   return (
     <div style={{ minHeight: '100vh', background: t.color.background }}>
-      <OpsChrome t={t} staff={staff} agentHealth="healthy" />
-      <main style={{ padding: `${t.space.unit * 8}px ${t.space.unit * 5}px`, fontFamily: t.type.bodyFamily, color: t.color.foreground }}>
-        <h1 style={{ fontFamily: t.type.headingFamily, fontSize: 28, fontWeight: t.type.headingWeight }}>Customers</h1>
-        <p style={{ color: t.color.muted, marginTop: t.space.unit * 2 }}>Customers coming soon — plan health, churn signals, trial conversions.</p>
+      <OpsChrome
+        t={t}
+        staff={staff}
+        agentHealth="healthy"
+        openAlertCount={openAlertCount}
+      />
+      <main>
+        <OpsCustomersPreview t={t} />
       </main>
     </div>
   )
