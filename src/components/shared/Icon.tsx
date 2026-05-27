@@ -4,7 +4,7 @@ import type { BrandTokens } from '../../lib/brand'
 // Ported from brand-studio src/data/iconLibrary.ts + Icon.tsx.
 // Full icon library can be added later; only include what ops surfaces need.
 
-export type IconName = 'phone' | 'close'
+export type IconName = 'phone' | 'close' | 'warning' | 'info'
 
 type IconEntry = {
   paths: string[]
@@ -23,6 +23,13 @@ const ICON_LIBRARY: Record<IconName, IconEntry> = {
   },
   close: {
     paths: ['M6 6 l12 12', 'M18 6 l-12 12'],
+  },
+  warning: {
+    paths: ['M12 3 l10 18 h-20 z', 'M12 10 v5', 'M12 18 v0.01'],
+  },
+  info: {
+    paths: ['M12 8 v0.01', 'M12 11 v5'],
+    extras: [{ kind: 'circle', cx: 12, cy: 12, r: 9, fill: 'stroke' }],
   },
 }
 
