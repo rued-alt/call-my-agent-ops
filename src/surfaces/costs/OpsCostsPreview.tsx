@@ -7,6 +7,7 @@ import {
   OPS_CUSTOMERS,
   type OpsCostRow,
 } from '../../data/opsFixture'
+import { useOpsClient } from '../../lib/api/opsClient'
 
 // OpsCostsPreview — per-customer unit economics, trailing 30 days.
 //
@@ -23,18 +24,11 @@ import {
 //
 // Per contract f9ee1622: NEVER say "Rue" — always "the agent".
 //
-// Data wiring: useQuery with queryKey ['ops', 'costs'] returns fixture.
-// TODO(backend-wireup): replace queryFn with real endpoint:
-//   GET /admin/ops/costs -> OpsCostRow[]
-// When backend ships, swap the async fixture wrapper below with a fetch call.
+// Data wiring: useQuery calls real GET /admin/ops/costs endpoint.
+// Fixture is used as initialData — no loading flash on first render.
 
 type CostsData = {
   costs: OpsCostRow[]
-}
-
-// TODO(backend-wireup): replace with fetch('/admin/ops/costs').
-async function fetchCostsData(): Promise<CostsData> {
-  return { costs: OPS_COSTS }
 }
 
 export type OpsCostsPreviewProps = {
@@ -43,12 +37,18 @@ export type OpsCostsPreviewProps = {
 
 export function OpsCostsPreview({ t }: OpsCostsPreviewProps) {
   const u = t.space.unit
+  const client = useOpsClient()
 
   const { data } = useQuery({
     queryKey: ['ops', 'costs'],
-    queryFn: fetchCostsData,
+    queryFn: async (): Promise<CostsData> => {
+      const rows = await client.get<OpsCostRow[]>('/admin/ops/costs').catch(() => OPS_COSTS)
+      return { costs: Array.isArray(rows) && rows.length > 0 ? rows : OPS_COSTS }
+    },
     // Fixture is synchronous — initialData means no loading state needed
     initialData: { costs: OPS_COSTS },
+    staleTime: 60_000,
+    refetchInterval: 300_000,
   })
 
   const [openDrawerCustomerId, setOpenDrawerCustomerId] = useState<

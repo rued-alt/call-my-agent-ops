@@ -32,6 +32,7 @@ import {
   type OpsProviderHealth,
   type OpsPulseRollup,
 } from '../../data/opsFixture'
+import { useOpsClient } from '../../lib/api/opsClient'
 
 // OpsMissionPreview — the leave-on war-room dashboard. Single file by
 // design: it's one surface, and keeping every cell co-located makes the
@@ -74,10 +75,11 @@ const CATEGORY_ORDER: OpsProviderCategory[] = [
   'billing',
 ]
 
-// ── Data shape + fixture-async wrappers ─────────────────────────────
+// ── Data shape ───────────────────────────────────────────────────────
 // Every Mission Control endpoint is wrapped in a useQuery so the cache,
 // background refresh, and devtools wiring are in place from the start.
-// TODO(backend-wireup): replace each fetchX() with a real fetch.
+// Real endpoints are called in parallel; fixture data is used as fallback
+// and initialData so there's no loading flash on first render.
 type MissionData = {
   providers: OpsProviderHealth[]
   events: OpsLiveEvent[]
@@ -94,39 +96,6 @@ type MissionData = {
   evalQueue: OpsEvalQueueItem[]
 }
 
-// TODO(backend-wireup): once the backend ships, replace the fixture
-// references with parallel fetch() calls. Each endpoint:
-//   GET /admin/ops/providers     -> OpsProviderHealth[]
-//   GET /admin/ops/events        -> OpsLiveEvent[]
-//   GET /admin/ops/lifetime      -> OpsLifetimeStats
-//   GET /admin/ops/mrr           -> OpsMrrRollup
-//   GET /admin/ops/pulse         -> OpsPulseRollup
-//   GET /admin/ops/north-star    -> OpsNorthStar
-//   GET /admin/ops/burn          -> OpsAIBurn
-//   GET /admin/ops/funnel        -> OpsFunnelStage[]
-//   GET /admin/ops/calls/hourly  -> number[]
-//   GET /admin/ops/incidents/last -> { at: string }
-//   GET /admin/ops/alerts        -> OpsAlert[]
-//   GET /admin/ops/customers     -> OpsCustomer[]
-//   GET /admin/ops/eval-queue    -> OpsEvalQueueItem[]
-async function fetchMissionData(): Promise<MissionData> {
-  return {
-    providers: OPS_PROVIDERS,
-    events: OPS_LIVE_EVENTS,
-    lifetime: OPS_LIFETIME,
-    mrr: OPS_MRR,
-    pulse: OPS_PULSE,
-    northStar: OPS_NORTH_STAR,
-    burn: OPS_AI_BURN,
-    funnel: OPS_TRIAL_FUNNEL,
-    hourly: OPS_CALLS_24H,
-    lastIncidentAt: OPS_LAST_INCIDENT_AT,
-    alerts: OPS_ALERTS,
-    customers: OPS_CUSTOMERS,
-    evalQueue: OPS_EVAL_QUEUE,
-  }
-}
-
 const SOUND_PREF_KEY = 'ops-mission-sound-on'
 
 export type OpsMissionPreviewProps = {
@@ -136,6 +105,8 @@ export type OpsMissionPreviewProps = {
 export function OpsMissionPreview({ t }: OpsMissionPreviewProps) {
   const u = t.space.unit
   const { toasts, show: showToast } = useOpsToast()
+  const client = useOpsClient()
+
   const [soundOn, setSoundOn] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -169,7 +140,53 @@ export function OpsMissionPreview({ t }: OpsMissionPreviewProps) {
 
   const { data } = useQuery({
     queryKey: ['ops', 'mission'],
-    queryFn: fetchMissionData,
+    queryFn: async (): Promise<MissionData> => {
+      // Fire all endpoint calls in parallel; each falls back to fixture on error.
+      const [
+        providers,
+        events,
+        lifetime,
+        mrr,
+        pulse,
+        northStar,
+        burn,
+        funnel,
+        hourly,
+        lastIncidentRes,
+        alerts,
+        customers,
+        evalQueue,
+      ] = await Promise.all([
+        client.get<OpsProviderHealth[]>('/admin/ops/providers').catch(() => OPS_PROVIDERS),
+        client.get<OpsLiveEvent[]>('/admin/ops/events').catch(() => OPS_LIVE_EVENTS),
+        client.get<OpsLifetimeStats>('/admin/ops/lifetime').catch(() => OPS_LIFETIME),
+        client.get<OpsMrrRollup>('/admin/ops/mrr').catch(() => OPS_MRR),
+        client.get<OpsPulseRollup>('/admin/ops/pulse').catch(() => OPS_PULSE),
+        client.get<OpsNorthStar>('/admin/ops/north-star').catch(() => OPS_NORTH_STAR),
+        client.get<OpsAIBurn>('/admin/ops/burn').catch(() => OPS_AI_BURN),
+        client.get<OpsFunnelStage[]>('/admin/ops/funnel').catch(() => OPS_TRIAL_FUNNEL),
+        client.get<number[]>('/admin/ops/calls/hourly').catch(() => OPS_CALLS_24H),
+        client.get<{ at: string | null }>('/admin/ops/incidents/last').catch(() => ({ at: OPS_LAST_INCIDENT_AT })),
+        client.get<OpsAlert[]>('/admin/ops/alerts?resolved=false').catch(() => OPS_ALERTS),
+        client.get<OpsCustomer[]>('/admin/ops/customers').catch(() => OPS_CUSTOMERS),
+        client.get<OpsEvalQueueItem[]>('/admin/ops/eval/queue').catch(() => OPS_EVAL_QUEUE),
+      ])
+      return {
+        providers: Array.isArray(providers) ? providers : OPS_PROVIDERS,
+        events: Array.isArray(events) ? events : OPS_LIVE_EVENTS,
+        lifetime: lifetime ?? OPS_LIFETIME,
+        mrr: mrr ?? OPS_MRR,
+        pulse: pulse ?? OPS_PULSE,
+        northStar: northStar ?? OPS_NORTH_STAR,
+        burn: burn ?? OPS_AI_BURN,
+        funnel: Array.isArray(funnel) ? funnel : OPS_TRIAL_FUNNEL,
+        hourly: Array.isArray(hourly) ? hourly : OPS_CALLS_24H,
+        lastIncidentAt: lastIncidentRes?.at ?? OPS_LAST_INCIDENT_AT,
+        alerts: Array.isArray(alerts) ? alerts : OPS_ALERTS,
+        customers: Array.isArray(customers) ? customers : OPS_CUSTOMERS,
+        evalQueue: Array.isArray(evalQueue) ? evalQueue : OPS_EVAL_QUEUE,
+      }
+    },
     initialData: {
       providers: OPS_PROVIDERS,
       events: OPS_LIVE_EVENTS,
@@ -185,6 +202,8 @@ export function OpsMissionPreview({ t }: OpsMissionPreviewProps) {
       customers: OPS_CUSTOMERS,
       evalQueue: OPS_EVAL_QUEUE,
     },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   })
 
   const openAlerts = data.alerts.filter((a) => !a.resolved)

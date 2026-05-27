@@ -1,5 +1,6 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect } from 'vitest'
 import { OpsCustomersPreview } from './OpsCustomersPreview'
 import { TOKENS } from '../../lib/brand'
@@ -10,9 +11,18 @@ import {
   type HealthBucket,
 } from '../../data/opsFixture'
 
-// Render helper
+// Render helper — wraps with a fresh QueryClient so useQuery works in tests.
+// retryBoundary is set to 0 so network errors don't cause retries; initialData
+// from the component is used immediately so no loading state appears.
 function renderCustomers() {
-  return render(<OpsCustomersPreview t={TOKENS} />)
+  const qc = new QueryClient({
+    defaultOptions: { queries: { retry: 0, gcTime: 0 } },
+  })
+  return render(
+    <QueryClientProvider client={qc}>
+      <OpsCustomersPreview t={TOKENS} />
+    </QueryClientProvider>,
+  )
 }
 
 // ── Bucket order ───────────────────────────────────────────────────────

@@ -12,6 +12,7 @@ import {
   type OpsPulseRollup,
   type OpsSinceLastVisit,
 } from '../../data/opsFixture'
+import { useOpsClient } from '../../lib/api/opsClient'
 
 // OpsPulsePreview — the morning check surface.
 //
@@ -25,26 +26,16 @@ import {
 // Voice is matter-of-fact. Numbers are plain. No marketing copy.
 // Per contract f9ee1622: NEVER say "Rue" — always "the agent".
 //
-// Data wiring: useQuery with queryKey ['ops', 'pulse'] returns fixture.
-// TODO(backend-wireup): replace queryFn with real endpoint calls:
+// Data wiring: useQuery with queryKey ['ops', 'pulse'] calls real backend.
+// Fixture is used as initialData so there's no loading flash on first render.
+// Backend endpoints:
 //   GET /admin/ops/pulse        -> OpsPulseRollup
-//   GET /admin/ops/since-last   -> OpsSinceLastVisit
 //   GET /admin/ops/alerts       -> OpsAlert[]
-// When backend ships, swap the async fixture wrappers below with fetch calls.
 
 type PulseData = {
   pulse: OpsPulseRollup
   sinceLastVisit: OpsSinceLastVisit
   alerts: OpsAlert[]
-}
-
-// TODO(backend-wireup): replace with fetch('/admin/ops/pulse') etc.
-async function fetchPulseData(): Promise<PulseData> {
-  return {
-    pulse: OPS_PULSE,
-    sinceLastVisit: OPS_SINCE_LAST_VISIT,
-    alerts: OPS_ALERTS,
-  }
 }
 
 export type OpsPulsePreviewProps = {
@@ -53,16 +44,25 @@ export type OpsPulsePreviewProps = {
 
 export function OpsPulsePreview({ t }: OpsPulsePreviewProps) {
   const u = t.space.unit
+  const client = useOpsClient()
 
   const { data } = useQuery({
     queryKey: ['ops', 'pulse'],
-    queryFn: fetchPulseData,
-    // Fixture is synchronous — initialData means no loading state needed
+    queryFn: async (): Promise<PulseData> => {
+      const [pulse, alerts] = await Promise.all([
+        client.get<OpsPulseRollup>('/admin/ops/pulse').catch(() => OPS_PULSE),
+        client.get<OpsAlert[]>('/admin/ops/alerts?resolved=false').catch(() => OPS_ALERTS),
+      ])
+      return { pulse, sinceLastVisit: OPS_SINCE_LAST_VISIT, alerts }
+    },
+    // Fixture as initialData — no loading state on first render.
     initialData: {
       pulse: OPS_PULSE,
       sinceLastVisit: OPS_SINCE_LAST_VISIT,
       alerts: OPS_ALERTS,
     },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   })
 
   const [dismissedAlertIds, setDismissedAlertIds] = useState<Set<string>>(

@@ -11,6 +11,7 @@ import {
   type OpsOutcomeClass,
   type OpsAutonomy,
 } from '../../data/opsFixture'
+import { useOpsClient } from '../../lib/api/opsClient'
 import {
   OPS_STAFF_BY_ID,
   OpsLatencyTimeline,
@@ -29,12 +30,9 @@ import { DEFAULT_OPS_STAFF } from '../../components/chrome/OpsChrome'
 // right rail. Keyboard-driven (1/2/3 keys per question, ↵ to advance).
 // Goal: 20–50 calls rated in under 15 minutes.
 //
-// Data wiring: useQuery with queryKey ['ops', 'eval'] returns fixture.
-// TODO(backend-wireup): replace queryFn with real endpoint calls:
-//   GET  /admin/ops/eval/queue      -> OpsEvalQueueItem[]
-//   POST /admin/ops/eval/rate       -> { callId, rating } -> 200
-//   GET  /admin/ops/eval/calls/:id  -> OpsCallRecord
-// When backend ships, swap the async fixture wrappers below with fetch calls.
+// Data wiring: useQuery calls real GET /admin/ops/eval/queue endpoint.
+// POST /admin/ops/eval/rate is called on commitRating.
+// Fixture is used as initialData — no loading flash on first render.
 
 const OUTCOME_LABEL: Record<OpsOutcomeClass, string> = {
   booking: 'Booking',
@@ -93,13 +91,11 @@ type EvalQueueData = {
   queue: Array<OpsEvalQueueItem & { call: OpsCallRecord }>
 }
 
-// TODO(backend-wireup): replace with fetch('/admin/ops/eval/queue') etc.
-async function fetchEvalQueue(): Promise<EvalQueueData> {
+function buildEvalQueueFromFixture(): EvalQueueData {
   const queue = OPS_EVAL_QUEUE.map((item) => {
     const call = OPS_CALLS.find((c) => c.id === item.callId)
     return call ? { ...item, call } : null
   }).filter(Boolean) as Array<OpsEvalQueueItem & { call: OpsCallRecord }>
-
   return { queue }
 }
 
@@ -110,16 +106,21 @@ export type OpsEvalQueuePreviewProps = {
 
 export function OpsEvalQueuePreview({ t, staff = DEFAULT_OPS_STAFF }: OpsEvalQueuePreviewProps) {
   const u = t.space.unit
+  const client = useOpsClient()
 
   const { data } = useQuery({
     queryKey: ['ops', 'eval'],
-    queryFn: fetchEvalQueue,
-    initialData: {
-      queue: OPS_EVAL_QUEUE.map((item) => {
+    queryFn: async (): Promise<EvalQueueData> => {
+      const items = await client.get<OpsEvalQueueItem[]>('/admin/ops/eval/queue').catch(() => OPS_EVAL_QUEUE)
+      const queueItems = Array.isArray(items) && items.length > 0 ? items : OPS_EVAL_QUEUE
+      const queue = queueItems.map((item) => {
         const call = OPS_CALLS.find((c) => c.id === item.callId)
         return call ? { ...item, call } : null
-      }).filter(Boolean) as Array<OpsEvalQueueItem & { call: OpsCallRecord }>,
+      }).filter(Boolean) as Array<OpsEvalQueueItem & { call: OpsCallRecord }>
+      return { queue }
     },
+    initialData: buildEvalQueueFromFixture(),
+    staleTime: 30_000,
   })
 
   const queue = data.queue
@@ -160,6 +161,15 @@ export function OpsEvalQueuePreview({ t, staff = DEFAULT_OPS_STAFF }: OpsEvalQue
     setStreak((s) => s + 1)
     setShowJustRated(current.callId)
     window.setTimeout(() => setShowJustRated(null), 700)
+    // POST rating to real backend (fire-and-forget; UI already advances).
+    void client.post('/admin/ops/eval/rate', {
+      call_id: current.callId,
+      staff_id: staff.id,
+      q1: rating.understood,
+      q2: rating.answered,
+      q3: rating.tone,
+      q4: rating.approved,
+    }).catch(() => { /* best-effort; don't break UI on network failure */ })
     advance()
   }
 

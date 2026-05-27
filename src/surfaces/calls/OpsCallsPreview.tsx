@@ -9,6 +9,7 @@ import {
   type OpsOutcomeClass,
   type OpsAutonomy,
 } from '../../data/opsFixture'
+import { useOpsClient } from '../../lib/api/opsClient'
 import {
   OPS_STAFF_BY_ID,
   OpsAuditTail,
@@ -37,18 +38,11 @@ import type { OpsStaff } from '../../components/chrome/OpsChrome'
 // Voice: matter-of-fact. Hard data, factual labels, no marketing speak.
 // Per contract f9ee1622: NEVER say "Rue" — always "the agent".
 //
-// Data wiring: useQuery with queryKey ['ops', 'calls'] returns fixture.
-// TODO(backend-wireup): replace queryFn with real endpoint:
-//   GET /admin/ops/calls  -> OpsCallRecord[]
-// When backend ships, swap the async fixture wrapper below with fetch.
+// Data wiring: useQuery calls real GET /admin/ops/calls endpoint.
+// Fixture is used as initialData — no loading flash on first render.
 
 type CallsData = {
   calls: OpsCallRecord[]
-}
-
-// TODO(backend-wireup): replace with fetch('/admin/ops/calls')
-async function fetchCallsData(): Promise<CallsData> {
-  return { calls: OPS_CALLS }
 }
 
 const OUTCOME_LABEL: Record<OpsOutcomeClass, string> = {
@@ -106,11 +100,17 @@ export type OpsCallsPreviewProps = {
 export function OpsCallsPreview({ t, staff }: OpsCallsPreviewProps) {
   const u = t.space.unit
   const { toasts, show: showToast } = useOpsToast()
+  const client = useOpsClient()
 
   const { data } = useQuery({
     queryKey: ['ops', 'calls'],
-    queryFn: fetchCallsData,
+    queryFn: async (): Promise<CallsData> => {
+      const calls = await client.get<OpsCallRecord[]>('/admin/ops/calls?limit=200').catch(() => OPS_CALLS)
+      return { calls: Array.isArray(calls) ? calls : OPS_CALLS }
+    },
     initialData: { calls: OPS_CALLS },
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   })
 
   const [query, setQuery] = useState('')

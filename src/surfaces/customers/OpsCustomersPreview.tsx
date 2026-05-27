@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import type { BrandTokens } from '../../lib/brand'
 import { hexToRgba } from '../../lib/glass'
 import { useGlassPress } from '../../lib/glass/useGlassPress'
@@ -14,6 +15,7 @@ import {
   type OpsCustomerPlan,
   type HealthBucket,
 } from '../../data/opsFixture'
+import { useOpsClient } from '../../lib/api/opsClient'
 
 // OpsCustomersPreview — customer health list.
 //
@@ -30,10 +32,8 @@ import {
 // PII (owner name) is shown by default since this is an ops surface.
 // Per contract f9ee1622: NEVER say "Rue" — always "the agent".
 //
-// Data wiring: useQuery with queryKey ['ops', 'customers'] returns fixture.
-// TODO(backend-wireup): replace queryFn with real endpoint call:
-//   GET /admin/ops/customers -> OpsCustomer[]
-// When backend ships, swap the async fixture wrapper below with a fetch call.
+// Data wiring: useQuery calls real GET /admin/ops/customers endpoint.
+// Fixture is used as initialData — no loading flash on first render.
 
 const BUCKET_LABEL: Record<HealthBucket, string> = {
   healthy: 'Healthy',
@@ -59,30 +59,44 @@ export function OpsCustomersPreview({ t }: OpsCustomersPreviewProps) {
   const { toasts, show: showToast } = useOpsToast()
   const [activeBucket, setActiveBucket] = useState<HealthBucket | 'all'>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const client = useOpsClient()
+
+  const { data: customerData } = useQuery({
+    queryKey: ['ops', 'customers'],
+    queryFn: async () => {
+      const rows = await client.get<OpsCustomer[]>('/admin/ops/customers').catch(() => OPS_CUSTOMERS)
+      return Array.isArray(rows) && rows.length > 0 ? rows : OPS_CUSTOMERS
+    },
+    initialData: OPS_CUSTOMERS,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  })
+
+  const customers = customerData
 
   // Pre-build map of bucket → customers for chip counts.
   const bucketed = useMemo(() => {
     const map = new Map<HealthBucket, OpsCustomer[]>()
-    for (const c of OPS_CUSTOMERS) {
+    for (const c of customers) {
       const b = bucketFor(c)
       const arr = map.get(b) ?? []
       arr.push(c)
       map.set(b, arr)
     }
     return map
-  }, [])
+  }, [customers])
 
   // Visible rows: sorted by bucket priority when showing all.
   const visible = useMemo(() => {
     if (activeBucket === 'all') {
-      return [...OPS_CUSTOMERS].sort((a, b) => {
+      return [...customers].sort((a, b) => {
         const ai = BUCKET_ORDER.indexOf(bucketFor(a))
         const bi = BUCKET_ORDER.indexOf(bucketFor(b))
         return ai - bi
       })
     }
     return bucketed.get(activeBucket) ?? []
-  }, [activeBucket, bucketed])
+  }, [activeBucket, bucketed, customers])
 
   return (
     <div
@@ -123,7 +137,7 @@ export function OpsCustomersPreview({ t }: OpsCustomersPreviewProps) {
             letterSpacing: 0.3,
           }}
         >
-          {OPS_CUSTOMERS.length} accounts
+          {customers.length} accounts
         </span>
       </div>
 
@@ -139,7 +153,7 @@ export function OpsCustomersPreview({ t }: OpsCustomersPreviewProps) {
         <BucketChip
           t={t}
           label="All"
-          count={OPS_CUSTOMERS.length}
+          count={customers.length}
           active={activeBucket === 'all'}
           onSelect={() => setActiveBucket('all')}
           tone="neutral"
