@@ -9,12 +9,42 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PulseRouteImport } from './routes/pulse'
 import { Route as MissionRouteImport } from './routes/mission'
+import { Route as EvalRouteImport } from './routes/eval'
+import { Route as CustomersRouteImport } from './routes/customers'
+import { Route as CostsRouteImport } from './routes/costs'
+import { Route as CallsRouteImport } from './routes/calls'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PulseRoute = PulseRouteImport.update({
+  id: '/pulse',
+  path: '/pulse',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MissionRoute = MissionRouteImport.update({
   id: '/mission',
   path: '/mission',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EvalRoute = EvalRouteImport.update({
+  id: '/eval',
+  path: '/eval',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersRoute = CustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CostsRoute = CostsRouteImport.update({
+  id: '/costs',
+  path: '/costs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CallsRoute = CallsRouteImport.update({
+  id: '/calls',
+  path: '/calls',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -25,37 +55,107 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/calls': typeof CallsRoute
+  '/costs': typeof CostsRoute
+  '/customers': typeof CustomersRoute
+  '/eval': typeof EvalRoute
   '/mission': typeof MissionRoute
+  '/pulse': typeof PulseRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/calls': typeof CallsRoute
+  '/costs': typeof CostsRoute
+  '/customers': typeof CustomersRoute
+  '/eval': typeof EvalRoute
   '/mission': typeof MissionRoute
+  '/pulse': typeof PulseRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/calls': typeof CallsRoute
+  '/costs': typeof CostsRoute
+  '/customers': typeof CustomersRoute
+  '/eval': typeof EvalRoute
   '/mission': typeof MissionRoute
+  '/pulse': typeof PulseRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/mission'
+  fullPaths:
+    | '/'
+    | '/calls'
+    | '/costs'
+    | '/customers'
+    | '/eval'
+    | '/mission'
+    | '/pulse'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/mission'
-  id: '__root__' | '/' | '/mission'
+  to: '/' | '/calls' | '/costs' | '/customers' | '/eval' | '/mission' | '/pulse'
+  id:
+    | '__root__'
+    | '/'
+    | '/calls'
+    | '/costs'
+    | '/customers'
+    | '/eval'
+    | '/mission'
+    | '/pulse'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CallsRoute: typeof CallsRoute
+  CostsRoute: typeof CostsRoute
+  CustomersRoute: typeof CustomersRoute
+  EvalRoute: typeof EvalRoute
   MissionRoute: typeof MissionRoute
+  PulseRoute: typeof PulseRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/pulse': {
+      id: '/pulse'
+      path: '/pulse'
+      fullPath: '/pulse'
+      preLoaderRoute: typeof PulseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mission': {
       id: '/mission'
       path: '/mission'
       fullPath: '/mission'
       preLoaderRoute: typeof MissionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eval': {
+      id: '/eval'
+      path: '/eval'
+      fullPath: '/eval'
+      preLoaderRoute: typeof EvalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers': {
+      id: '/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/costs': {
+      id: '/costs'
+      path: '/costs'
+      fullPath: '/costs'
+      preLoaderRoute: typeof CostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calls': {
+      id: '/calls'
+      path: '/calls'
+      fullPath: '/calls'
+      preLoaderRoute: typeof CallsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -70,7 +170,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CallsRoute: CallsRoute,
+  CostsRoute: CostsRoute,
+  CustomersRoute: CustomersRoute,
+  EvalRoute: EvalRoute,
   MissionRoute: MissionRoute,
+  PulseRoute: PulseRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

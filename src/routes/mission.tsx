@@ -2,10 +2,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react'
 import { TOKENS } from '../lib/brand'
 import { readRoleFromMetadata } from '../lib/auth/roles'
+import { OpsChrome, DEFAULT_OPS_STAFF } from '../components/chrome/OpsChrome'
+import type { OpsStaff, OpsRole } from '../components/chrome/OpsChrome'
 
-// Placeholder Mission Control. The full chrome port — OpsChrome,
-// OpsSecurity, role-aware nav, presence orb, mission cells — lands
-// in a follow-up contract under feature 579bf0da (see JAXN).
 export const Route = createFileRoute('/mission')({
   component: MissionRoute,
 })
@@ -17,16 +16,16 @@ function MissionRoute() {
         <RedirectToSignIn />
       </SignedOut>
       <SignedIn>
-        <MissionPlaceholder />
+        <MissionWithChrome />
       </SignedIn>
     </>
   )
 }
 
-function MissionPlaceholder() {
+function MissionWithChrome() {
   const t = TOKENS
   const { user } = useUser()
-  const role = readRoleFromMetadata(user?.publicMetadata)
+  const role = readRoleFromMetadata(user?.publicMetadata) as OpsRole | null
 
   if (!role) {
     // Sneak path — Clerk loaded a session but the role is missing.
@@ -37,88 +36,101 @@ function MissionPlaceholder() {
     return null
   }
 
+  // Build staff from Clerk user.
+  const staff: OpsStaff = {
+    id: user?.id ?? DEFAULT_OPS_STAFF.id,
+    fullName: user?.fullName ?? DEFAULT_OPS_STAFF.fullName,
+    initials: (user?.firstName?.[0] ?? '') + (user?.lastName?.[0] ?? '') || DEFAULT_OPS_STAFF.initials,
+    role,
+    // Clerk MFA — if the user has any verified MFA, treat as 2FA on.
+    twoFactorOn: (user?.twoFactorEnabled) ?? DEFAULT_OPS_STAFF.twoFactorOn,
+  }
+
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        background: t.color.background,
-        color: t.color.foreground,
-        fontFamily: t.type.bodyFamily,
-        padding: t.space.unit * 8,
-      }}
-    >
-      <header style={{ marginBottom: t.space.unit * 8 }}>
-        <div
-          style={{
-            color: t.color.accent,
-            fontSize: 11,
-            fontWeight: 600,
-            letterSpacing: 1.2,
-            textTransform: 'uppercase',
-          }}
-        >
-          Call My Agent · Ops · {role}
-        </div>
-        <h1
-          style={{
-            margin: `${t.space.unit * 2}px 0 0 0`,
-            fontFamily: t.type.headingFamily,
-            fontSize: 28,
-            fontWeight: t.type.headingWeight,
-            letterSpacing: '-0.015em',
-          }}
-        >
-          Mission Control
-        </h1>
-        <p
-          style={{
-            margin: `${t.space.unit * 2}px 0 0 0`,
-            color: t.color.muted,
-            fontSize: 14,
-            maxWidth: 560,
-            lineHeight: 1.55,
-          }}
-        >
-          Standing up — the live ops chrome (calls, voice gates, agent
-          incidents) ports in next wave. Until then, this surface is
-          intentionally minimal so the deploy + DNS path can be exercised
-          end-to-end.
-        </p>
-      </header>
-      <section
+    <div style={{ minHeight: '100vh', background: t.color.background, color: t.color.foreground }}>
+      <OpsChrome
+        t={t}
+        staff={staff}
+        agentHealth="healthy"
+        evalQueueCount={7}
+        openAlertCount={3}
+      />
+      <main
         style={{
-          maxWidth: 720,
-          padding: t.space.unit * 6,
-          background: t.color.surface,
-          border: `1px solid ${t.color.border}`,
-          borderRadius: t.radius.lg,
+          padding: `${t.space.unit * 8}px ${t.space.unit * 5}px`,
+          fontFamily: t.type.bodyFamily,
         }}
       >
-        <h2
+        <header style={{ marginBottom: t.space.unit * 8 }}>
+          <div
+            style={{
+              color: t.color.accent,
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: 1.2,
+              textTransform: 'uppercase',
+            }}
+          >
+            Call My Agent · Ops · {role}
+          </div>
+          <h1
+            style={{
+              margin: `${t.space.unit * 2}px 0 0 0`,
+              fontFamily: t.type.headingFamily,
+              fontSize: 28,
+              fontWeight: t.type.headingWeight,
+              letterSpacing: '-0.015em',
+            }}
+          >
+            Mission Control
+          </h1>
+          <p
+            style={{
+              margin: `${t.space.unit * 2}px 0 0 0`,
+              color: t.color.muted,
+              fontSize: 14,
+              maxWidth: 560,
+              lineHeight: 1.55,
+            }}
+          >
+            Foundation chrome is live. Mission Control cells land in the next wave.
+          </p>
+        </header>
+        <section
           style={{
-            margin: 0,
-            fontFamily: t.type.headingFamily,
-            fontSize: 16,
-            fontWeight: t.type.headingWeight,
+            maxWidth: 720,
+            padding: t.space.unit * 6,
+            background: t.color.surface,
+            border: `1px solid ${t.color.border}`,
+            borderRadius: t.radius.lg,
           }}
         >
-          Coming next
-        </h2>
-        <ul
-          style={{
-            margin: `${t.space.unit * 3}px 0 0 0`,
-            paddingLeft: t.space.unit * 5,
-            color: t.color.muted,
-            fontSize: 14,
-            lineHeight: 1.7,
-          }}
-        >
-          <li>Port OpsChrome + OpsSecurity from the Next.js prototype.</li>
-          <li>Live call monitor with PII-reveal flow.</li>
-          <li>Voice-gate dashboard wired to the Go-Live API.</li>
-          <li>Incident handoff to on-call.</li>
-        </ul>
-      </section>
-    </main>
+          <h2
+            style={{
+              margin: 0,
+              fontFamily: t.type.headingFamily,
+              fontSize: 16,
+              fontWeight: t.type.headingWeight,
+            }}
+          >
+            Mission Control coming soon
+          </h2>
+          <ul
+            style={{
+              margin: `${t.space.unit * 3}px 0 0 0`,
+              paddingLeft: t.space.unit * 5,
+              color: t.color.muted,
+              fontSize: 14,
+              lineHeight: 1.7,
+            }}
+          >
+            <li>Live call monitor with PII-reveal flow.</li>
+            <li>Voice-gate dashboard wired to the Go-Live API.</li>
+            <li>Provider health — LLM, STT, TTS, telephony.</li>
+            <li>Incident handoff to on-call.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
   )
 }

@@ -2,6 +2,8 @@
 // (~/Code/call-my-agent-ops/src/auth/roles.ts) verbatim — the role
 // vocabulary is product-locked. Roles live in Clerk's
 // `publicMetadata.role`; the values here are the source of truth.
+// Extended 2026-05-27: added useOpsRole() hook that exposes role +
+// canRevealPii guard for use in OpsSecurity / OpsChrome components.
 
 export type OpsRole = 'owner' | 'ops' | 'on-call' | 'read-only'
 
@@ -40,4 +42,24 @@ export function readRoleFromMetadata(
 ): OpsRole | null {
   if (metadata && isOpsRole(metadata.role)) return metadata.role
   return null
+}
+
+// Roles permitted to reveal PII (transcript content, phone numbers, etc.)
+// Must match ROLES_ALLOWED_TO_REVEAL in OpsSecurity.tsx.
+const ROLES_ALLOWED_TO_REVEAL: OpsRole[] = ['owner', 'ops', 'on-call']
+
+export function canRevealPii(role: OpsRole): boolean {
+  return ROLES_ALLOWED_TO_REVEAL.includes(role)
+}
+
+// useOpsRole — convenience hook for components that need role + PII guard.
+// Requires Clerk to be loaded; returns null role when not yet available.
+// Note: this hook calls useUser() from Clerk internally. Do not call
+// conditionally — React hook rules apply.
+import { useUser } from '@clerk/clerk-react'
+
+export function useOpsRole(): { role: OpsRole | null; canRevealPii: boolean } {
+  const { user } = useUser()
+  const role = readRoleFromMetadata(user?.publicMetadata)
+  return { role, canRevealPii: role ? canRevealPii(role) : false }
 }
