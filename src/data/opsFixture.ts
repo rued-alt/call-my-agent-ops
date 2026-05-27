@@ -998,3 +998,290 @@ export const OPS_COSTS: OpsCostRow[] = [
     breakdown: { llmCost: 0, sttCost: 0, ttsCost: 0, telephonyCost: 0 },
   },
 ]
+
+// ── Mission Control fixtures (war-room dashboard) ─────────────────────
+// Ported verbatim from brand-studio opsMonitorFixture.ts. Drives
+// OpsMissionPreview — the leave-on monitor. Backend wireup will replace
+// each block with a real endpoint; see TODO comments per export.
+
+// ── Provider registry ────────────────────────────────────────────────
+// Every provider in the stack emits a standard ProviderHealth payload
+// every 60s. Mission Control reads whatever's registered — no hardcoded
+// provider list.
+// TODO(backend-wireup): GET /admin/ops/providers -> OpsProviderHealth[]
+export type OpsProviderCategory =
+  | 'telephony'
+  | 'stt'
+  | 'llm'
+  | 'tts'
+  | 'app'
+  | 'auth'
+  | 'billing'
+
+export type OpsProviderStatus = 'healthy' | 'degraded' | 'down' | 'stale'
+
+export type OpsProviderHealth = {
+  id: string
+  displayName: string
+  category: OpsProviderCategory
+  status: OpsProviderStatus
+  p95LatencyMs: number
+  errorRatePct: number
+  /** 30 samples, 1 per minute (oldest → newest). */
+  latency30min: number[]
+  updatedAt: string
+  fallbacks: string[]
+  fallbackReady: boolean
+}
+
+export const OPS_PROVIDERS: OpsProviderHealth[] = [
+  {
+    id: 'telnyx',
+    displayName: 'Telnyx',
+    category: 'telephony',
+    status: 'healthy',
+    p95LatencyMs: 142,
+    errorRatePct: 0.0,
+    latency30min: [140, 138, 144, 141, 143, 139, 142, 140, 145, 142, 138, 141, 143, 142, 140, 144, 141, 139, 142, 143, 140, 142, 141, 144, 142, 139, 141, 143, 142, 142],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: [],
+    fallbackReady: false,
+  },
+  {
+    id: 'whisper',
+    displayName: 'OpenAI Whisper',
+    category: 'stt',
+    status: 'degraded',
+    p95LatencyMs: 2400,
+    errorRatePct: 0.4,
+    latency30min: [820, 840, 810, 850, 830, 870, 920, 980, 1050, 1180, 1320, 1490, 1640, 1820, 1980, 2080, 2150, 2200, 2280, 2310, 2350, 2380, 2390, 2410, 2400, 2420, 2400, 2410, 2400, 2400],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: ['deepgram'],
+    fallbackReady: true,
+  },
+  {
+    id: 'deepgram',
+    displayName: 'Deepgram',
+    category: 'stt',
+    status: 'healthy',
+    p95LatencyMs: 380,
+    errorRatePct: 0.0,
+    latency30min: [390, 385, 392, 388, 380, 384, 390, 386, 382, 380, 388, 390, 385, 382, 380, 384, 388, 390, 386, 380, 382, 388, 380, 384, 388, 382, 380, 386, 380, 380],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: ['whisper'],
+    fallbackReady: true,
+  },
+  {
+    id: 'gpt-5',
+    displayName: 'OpenAI GPT-5',
+    category: 'llm',
+    status: 'healthy',
+    p95LatencyMs: 820,
+    errorRatePct: 0.0,
+    latency30min: [810, 820, 830, 815, 820, 825, 820, 830, 815, 822, 820, 825, 815, 820, 820, 825, 820, 815, 820, 825, 820, 822, 820, 815, 820, 820, 825, 820, 820, 820],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: ['claude'],
+    fallbackReady: true,
+  },
+  {
+    id: 'claude',
+    displayName: 'Anthropic Claude',
+    category: 'llm',
+    status: 'healthy',
+    p95LatencyMs: 740,
+    errorRatePct: 0.1,
+    latency30min: [730, 745, 740, 750, 735, 740, 745, 750, 738, 742, 740, 745, 740, 735, 742, 740, 745, 738, 740, 742, 745, 740, 738, 740, 745, 740, 738, 742, 740, 740],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: ['gpt-5'],
+    fallbackReady: true,
+  },
+  {
+    id: 'elevenlabs',
+    displayName: 'ElevenLabs',
+    category: 'tts',
+    status: 'healthy',
+    p95LatencyMs: 380,
+    errorRatePct: 0.0,
+    latency30min: [385, 380, 390, 382, 380, 384, 388, 380, 385, 380, 386, 388, 382, 380, 384, 386, 380, 382, 388, 380, 384, 380, 382, 386, 380, 384, 380, 388, 380, 380],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: [],
+    fallbackReady: false,
+  },
+  {
+    id: 'render',
+    displayName: 'Render',
+    category: 'app',
+    status: 'healthy',
+    p95LatencyMs: 24,
+    errorRatePct: 0.0,
+    latency30min: [22, 24, 23, 25, 24, 23, 24, 25, 23, 24, 22, 24, 25, 23, 24, 22, 24, 25, 23, 24, 22, 24, 23, 24, 25, 23, 24, 22, 24, 24],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: [],
+    fallbackReady: false,
+  },
+  {
+    id: 'clerk',
+    displayName: 'Clerk',
+    category: 'auth',
+    status: 'healthy',
+    p95LatencyMs: 88,
+    errorRatePct: 0.0,
+    latency30min: [85, 88, 90, 87, 88, 86, 89, 90, 87, 88, 86, 88, 90, 87, 88, 86, 88, 90, 87, 88, 86, 88, 87, 88, 90, 87, 88, 86, 88, 88],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: [],
+    fallbackReady: false,
+  },
+  {
+    id: 'stripe',
+    displayName: 'Stripe',
+    category: 'billing',
+    status: 'healthy',
+    p95LatencyMs: 140,
+    errorRatePct: 0.0,
+    latency30min: [138, 140, 142, 139, 140, 138, 141, 142, 139, 140, 138, 140, 142, 139, 140, 138, 140, 142, 139, 140, 138, 140, 139, 140, 142, 139, 140, 138, 140, 140],
+    updatedAt: isoMinusMin(0.5),
+    fallbacks: [],
+    fallbackReady: false,
+  },
+]
+
+// ── Live events ──────────────────────────────────────────────────────
+// Operationally interesting events only — bookings, escalations,
+// signups, churn, provider state changes, alert raises/resolves.
+// TODO(backend-wireup): GET /admin/ops/events?since=:ts -> OpsLiveEvent[]
+// (or SSE stream /admin/ops/events/stream).
+export type OpsLiveEventKind =
+  | 'booking'
+  | 'escalated'
+  | 'takeover'
+  | 'signup'
+  | 'upgrade'
+  | 'downgrade'
+  | 'churn'
+  | 'trial-end'
+  | 'provider-degraded'
+  | 'provider-recovered'
+  | 'provider-down'
+  | 'alert-raised'
+  | 'alert-resolved'
+
+export type OpsLiveEventTone = 'good' | 'warn' | 'bad' | 'neutral'
+
+export type OpsLiveEvent = {
+  id: string
+  at: string
+  kind: OpsLiveEventKind
+  tone: OpsLiveEventTone
+  headline: string
+  context?: string
+  /** Geographic location for the globe marker. Provider/infra omits. */
+  coords?: { lat: number; lng: number; city: string }
+}
+
+export const OPS_LIVE_EVENTS: OpsLiveEvent[] = [
+  { id: 'ev-001', at: isoMinusMin(0.05), kind: 'booking', tone: 'good', headline: 'Booking', context: "Daniel's Trattoria · Linda P. Wed 7 PM", coords: { lat: 40.7128, lng: -74.0060, city: 'New York, NY' } },
+  { id: 'ev-002', at: isoMinusMin(0.2),  kind: 'escalated', tone: 'warn', headline: 'Escalated', context: 'Sandra Insurance · Brenda Park (complaint)', coords: { lat: 33.4484, lng: -112.0740, city: 'Phoenix, AZ' } },
+  { id: 'ev-003', at: isoMinusMin(0.75), kind: 'signup', tone: 'good', headline: 'New customer', context: "Marco's Plumbing · Solo $49", coords: { lat: 34.0522, lng: -118.2437, city: 'Los Angeles, CA' } },
+  { id: 'ev-004', at: isoMinusMin(2),    kind: 'provider-degraded', tone: 'warn', headline: 'Whisper degraded', context: 'p95 2.4s · switching primary to Deepgram available' },
+  { id: 'ev-005', at: isoMinusMin(4),    kind: 'churn', tone: 'bad', headline: 'Churn', context: 'Tyler HVAC · Solo plan', coords: { lat: 32.7767, lng: -96.7970, city: 'Dallas, TX' } },
+  { id: 'ev-006', at: isoMinusMin(8),    kind: 'booking', tone: 'good', headline: 'Booking', context: 'Rosa Family Dental · Diego R. Wed 2 PM', coords: { lat: 25.7617, lng: -80.1918, city: 'Miami, FL' } },
+  { id: 'ev-007', at: isoMinusMin(12),   kind: 'upgrade', tone: 'good', headline: 'Upgrade', context: 'Wei CPA Group · Solo → Team', coords: { lat: 37.7749, lng: -122.4194, city: 'San Francisco, CA' } },
+  { id: 'ev-008', at: isoMinusMin(18),   kind: 'takeover', tone: 'neutral', headline: 'Owner takeover', context: "Marco's Plumbing · Pacific Plumbing call", coords: { lat: 34.0522, lng: -118.2437, city: 'Los Angeles, CA' } },
+  { id: 'ev-009', at: isoMinusMin(23),   kind: 'alert-raised', tone: 'warn', headline: 'Alert raised', context: 'Arnav Auto Body — stuck in setup', coords: { lat: 41.8781, lng: -87.6298, city: 'Chicago, IL' } },
+  { id: 'ev-010', at: isoMinusMin(30),   kind: 'trial-end', tone: 'neutral', headline: 'Trial ended', context: 'Jasmine Esthetics · 30-day complete', coords: { lat: 47.6062, lng: -122.3321, city: 'Seattle, WA' } },
+]
+
+// ── MRR rollup ───────────────────────────────────────────────────────
+// TODO(backend-wireup): GET /admin/ops/mrr -> OpsMrrRollup
+export type OpsMrrRollup = {
+  mrrDollars: number
+  payingCount: number
+  trialCount: number
+  todayRevenueDollars: number
+  todayRevenueDeltaDollars: number
+  mrrDeltaDollars: number
+  revenue7d: number[]
+}
+
+export const OPS_MRR: OpsMrrRollup = {
+  mrrDollars: 13420,
+  payingCount: 24,
+  trialCount: 6,
+  todayRevenueDollars: 412,
+  todayRevenueDeltaDollars: 71,
+  mrrDeltaDollars: 540,
+  revenue7d: [318, 342, 397, 369, 412, 441, 412],
+}
+
+// ── Lifetime + status counters ───────────────────────────────────────
+// TODO(backend-wireup): GET /admin/ops/lifetime -> OpsLifetimeStats
+export type OpsLifetimeStats = {
+  callsHandled: number
+  businessesServed: number
+  hoursReturned: number
+}
+
+export const OPS_LIFETIME: OpsLifetimeStats = {
+  callsHandled: 142_817,
+  businessesServed: 312,
+  hoursReturned: 1894,
+}
+
+/** ISO timestamp of the last operational incident (outage / SEV-2+).
+ *  Drives the "time since last incident" counter in the status ribbon.
+ *  TODO(backend-wireup): GET /admin/ops/incidents/last -> { at: string } */
+export const OPS_LAST_INCIDENT_AT = isoMinusHr(14.4)
+
+/** Calls handled per hour over the trailing 24h (oldest → newest).
+ *  TODO(backend-wireup): GET /admin/ops/calls/hourly?window=24h -> number[] */
+export const OPS_CALLS_24H: number[] = [
+  2, 1, 0, 1, 0, 2, 4, 9, 14, 18, 22, 19,
+  17, 21, 16, 18, 14, 11, 7, 5, 3, 4, 5, 4,
+]
+
+// ── North Star ───────────────────────────────────────────────────────
+// TODO(backend-wireup): GET /admin/ops/north-star -> OpsNorthStar
+export type OpsNorthStar = {
+  label: string
+  currentDollars: number
+  goalDollars: number
+  /** Friendly ETA string for the projection line. */
+  etaLabel: string
+}
+
+export const OPS_NORTH_STAR: OpsNorthStar = {
+  label: '$20k MRR',
+  currentDollars: 13420,
+  goalDollars: 20000,
+  etaLabel: 'Aug 12',
+}
+
+// ── AI burn (today) ──────────────────────────────────────────────────
+// TODO(backend-wireup): GET /admin/ops/burn?window=today -> OpsAIBurn
+export type OpsAIBurn = {
+  todaySpendDollars: number
+  todayRevenueDollars: number
+  costPerCallDollars: number
+  todayCalls: number
+}
+
+export const OPS_AI_BURN: OpsAIBurn = {
+  todaySpendDollars: 38.7,
+  todayRevenueDollars: 412,
+  costPerCallDollars: 0.206,
+  todayCalls: 188,
+}
+
+// ── Trial → Paying funnel ────────────────────────────────────────────
+// TODO(backend-wireup): GET /admin/ops/funnel?window=30d -> OpsFunnelStage[]
+export type OpsFunnelStage = {
+  label: string
+  count: number
+}
+
+export const OPS_TRIAL_FUNNEL: OpsFunnelStage[] = [
+  { label: 'Signups (30d)', count: 41 },
+  { label: 'First call', count: 34 },
+  { label: 'Active (5+ calls)', count: 22 },
+  { label: 'Converted', count: 11 },
+]

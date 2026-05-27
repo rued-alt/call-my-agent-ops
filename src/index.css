@@ -26,8 +26,34 @@
   --motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
 }
 
-/* Agent orb keyframes — matches brand-studio cma-rue-* names for
-   wire-compatibility with RueOrb (now AgentOrb in this repo). */
+/* Agent orb keyframes — renamed from cma-rue-* to cma-agent-* per the
+   "no Rue, always 'the agent'" contract (f9ee1622). Aliases preserved
+   below so any in-flight call sites resolve identically. */
+@keyframes cma-agent-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.72; transform: scale(0.94); }
+}
+@keyframes cma-agent-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes cma-agent-think {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.08); opacity: 0.9; }
+  70% { transform: scale(0.96); opacity: 0.82; }
+}
+@keyframes cma-agent-glow {
+  0%, 100% { box-shadow: 0 0 12px var(--color-primary, #7c6ef7)44; }
+  50% { box-shadow: 0 0 28px var(--color-primary, #7c6ef7)88; }
+}
+@keyframes cma-agent-urgent-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+/* Backwards-compatible aliases — kept verbatim so any legacy literal
+   that still references cma-rue-* (e.g. older AgentOrb wiring) continues
+   to animate. New code MUST use cma-agent-*. */
 @keyframes cma-rue-breathe {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.72; transform: scale(0.94); }
@@ -54,6 +80,38 @@
 @keyframes mov-slide-down {
   from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Sparkline stroke-draw — the polyline starts fully dashed and animates
+   stroke-dashoffset to 0 on mount, producing a "drawn-on" effect. */
+@keyframes cma-svg-stroke-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Mission Control event stream — the newest line grows in from height 0
+   to its natural row height (26px), physically pushing siblings down. */
+@keyframes cma-stream-grow-in {
+  0% {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+    border-width: 0;
+  }
+  60% { opacity: 1; }
+  100% {
+    max-height: 26px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Toast slide-up entrance, used by OpsToast (and shared with the
+   Mission Control sound chime overlay). */
+@keyframes cma-modal-slide-up {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 html, body, #root {
