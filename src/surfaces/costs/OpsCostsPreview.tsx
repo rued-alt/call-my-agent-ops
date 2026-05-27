@@ -446,7 +446,11 @@ function CostBreakdownDrawer({
   const u = t.space.unit
   const bd = row.breakdown!
 
-  const lines: { label: string; value: number; key: string }[] = [
+  const lines: {
+    label: string
+    value: number
+    key: 'llm' | 'stt' | 'tts' | 'telephony'
+  }[] = [
     { key: 'llm', label: 'LLM cost', value: bd.llmCost },
     { key: 'stt', label: 'STT cost', value: bd.sttCost },
     { key: 'tts', label: 'TTS cost', value: bd.ttsCost },
@@ -457,69 +461,155 @@ function CostBreakdownDrawer({
     },
   ]
 
+  // Group provider×model drill-down by category and sort within each
+  // category by cost DESC so the biggest spender renders first.
+  const byProviderModel = bd.byProviderModel ?? []
+  const drillByCategory: Record<
+    'llm' | 'stt' | 'tts' | 'telephony',
+    Array<{ provider: string; model: string; cost: number; costPerCall?: number }>
+  > = { llm: [], stt: [], tts: [], telephony: [] }
+  for (const r of byProviderModel) {
+    drillByCategory[r.category].push({
+      provider: r.provider,
+      model: r.model,
+      cost: r.cost,
+      costPerCall: r.costPerCall,
+    })
+  }
+  for (const k of Object.keys(drillByCategory) as Array<keyof typeof drillByCategory>) {
+    drillByCategory[k].sort((a, b) => b.cost - a.cost)
+  }
+
   return (
     <div
       data-region="ops-costs-drawer"
       data-customer-id={row.customerId}
       style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gap: u * 3,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: u * 2,
         padding: `${u * 3}px ${u * 4}px`,
         background: hexToRgba(t.color.background, 0.7),
         borderBottom: `1px solid ${t.color.border}`,
         borderLeft: `3px solid ${t.color.border}`,
       }}
     >
-      {lines.map((line) => (
-        <div
-          key={line.key}
-          data-region="ops-costs-breakdown-item"
-          data-breakdown-key={line.key}
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: u,
-            padding: u * 2,
-            background: t.color.surface,
-            border: `1px solid ${t.color.border}`,
-            borderRadius: t.radius.sm,
-          }}
-        >
-          <span
+      {/* Category row (unchanged shape — load-bearing for existing tests). */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: u * 3,
+        }}
+      >
+        {lines.map((line) => (
+          <div
+            key={line.key}
+            data-region="ops-costs-breakdown-item"
+            data-breakdown-key={line.key}
             style={{
-              color: t.color.muted,
-              fontSize: 10,
-              letterSpacing: 0.4,
-              textTransform: 'uppercase' as const,
-              fontWeight: 500,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: u,
+              padding: u * 2,
+              background: t.color.surface,
+              border: `1px solid ${t.color.border}`,
+              borderRadius: t.radius.sm,
             }}
           >
-            {line.label}
-          </span>
-          <span
-            style={{
-              fontFamily: t.type.monoFamily,
-              fontWeight: 600,
-              fontSize: 15,
-              color: t.color.foreground,
-            }}
-          >
-            ${line.value.toFixed(2)}
-          </span>
-          {row.callsLast30d > 0 && (
             <span
               style={{
                 color: t.color.muted,
                 fontSize: 10,
-                fontFamily: t.type.monoFamily,
+                letterSpacing: 0.4,
+                textTransform: 'uppercase' as const,
+                fontWeight: 500,
               }}
             >
-              ${(line.value / row.callsLast30d).toFixed(4)} / call
+              {line.label}
             </span>
-          )}
-        </div>
-      ))}
+            <span
+              style={{
+                fontFamily: t.type.monoFamily,
+                fontWeight: 600,
+                fontSize: 15,
+                color: t.color.foreground,
+              }}
+            >
+              ${line.value.toFixed(2)}
+            </span>
+            {row.callsLast30d > 0 && (
+              <span
+                style={{
+                  color: t.color.muted,
+                  fontSize: 10,
+                  fontFamily: t.type.monoFamily,
+                }}
+              >
+                ${(line.value / row.callsLast30d).toFixed(4)} / call
+              </span>
+            )}
+            {/* ── Provider×model drill-down ─────────────────────────
+             * Each category card lists the per-(provider, model)
+             * spend sorted by cost DESC. Surfaces zero by design
+             * when the endpoint hasn't returned byProviderModel
+             * yet — the founder still sees the category roll-up. */}
+            {drillByCategory[line.key].length > 0 && (
+              <div
+                data-region="ops-costs-provider-model-drill"
+                data-drill-category={line.key}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  marginTop: u,
+                  paddingTop: u,
+                  borderTop: `1px dashed ${t.color.border}`,
+                }}
+              >
+                {drillByCategory[line.key].map((r, i) => (
+                  <div
+                    key={`${r.provider}-${r.model}-${i}`}
+                    data-region="ops-costs-provider-model-row"
+                    data-provider={r.provider}
+                    data-model={r.model}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'baseline',
+                      gap: 6,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: t.color.foreground,
+                        fontSize: 10,
+                        fontFamily: t.type.monoFamily,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                      title={`${r.provider} · ${r.model}`}
+                    >
+                      {r.provider} · {r.model}
+                    </span>
+                    <span
+                      style={{
+                        color: t.color.muted,
+                        fontSize: 10,
+                        fontFamily: t.type.monoFamily,
+                        flexShrink: 0,
+                      }}
+                    >
+                      ${r.cost.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

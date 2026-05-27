@@ -484,4 +484,94 @@ describe('OpsCostsPreview', () => {
       expect(screen.getByText('Cost / call')).toBeInTheDocument()
     })
   })
+
+  // ── Provider×model drill-down (under each category) ─────────────────
+  describe('provider × model drill-down', () => {
+    function openDanielsDrawer() {
+      // Daniel's Trattoria is the only seeded row with byProviderModel data.
+      const row = document.querySelector(
+        '[data-region="ops-costs-row"][data-customer-id="cust-daniel"]',
+      ) as HTMLButtonElement | null
+      expect(row).not.toBeNull()
+      fireEvent.click(row!)
+    }
+
+    it('renders the drawer for the clicked customer', () => {
+      renderCosts()
+      openDanielsDrawer()
+      const drawer = document.querySelector(
+        '[data-region="ops-costs-drawer"][data-customer-id="cust-daniel"]',
+      )
+      expect(drawer).not.toBeNull()
+    })
+
+    it('renders a provider×model drill section for the LLM category', () => {
+      renderCosts()
+      openDanielsDrawer()
+      const drill = document.querySelector(
+        '[data-region="ops-costs-provider-model-drill"][data-drill-category="llm"]',
+      )
+      expect(drill).not.toBeNull()
+    })
+
+    it('renders one row per (provider, model) line for the LLM category', () => {
+      renderCosts()
+      openDanielsDrawer()
+      const llmDrill = document.querySelector(
+        '[data-region="ops-costs-provider-model-drill"][data-drill-category="llm"]',
+      )!
+      const rows = llmDrill.querySelectorAll(
+        '[data-region="ops-costs-provider-model-row"]',
+      )
+      // Daniel's seeded with 2 LLM rows: gpt-5-realtime + gpt-5-mini
+      expect(rows.length).toBe(2)
+    })
+
+    it('orders provider×model rows by cost descending (biggest first)', () => {
+      renderCosts()
+      openDanielsDrawer()
+      const llmDrill = document.querySelector(
+        '[data-region="ops-costs-provider-model-drill"][data-drill-category="llm"]',
+      )!
+      const rows = Array.from(
+        llmDrill.querySelectorAll('[data-region="ops-costs-provider-model-row"]'),
+      ) as HTMLElement[]
+      expect(rows[0].getAttribute('data-model')).toBe('gpt-5-realtime')
+      expect(rows[1].getAttribute('data-model')).toBe('gpt-5-mini')
+    })
+
+    it('exposes provider + model as data attributes', () => {
+      renderCosts()
+      openDanielsDrawer()
+      const realtimeRow = document.querySelector(
+        '[data-region="ops-costs-provider-model-row"][data-model="gpt-5-realtime"]',
+      ) as HTMLElement | null
+      expect(realtimeRow).not.toBeNull()
+      expect(realtimeRow!.getAttribute('data-provider')).toBe('OpenAI')
+    })
+
+    it('renders per-row dollar amount in the drill', () => {
+      renderCosts()
+      openDanielsDrawer()
+      const realtimeRow = document.querySelector(
+        '[data-region="ops-costs-provider-model-row"][data-model="gpt-5-realtime"]',
+      )!
+      expect(realtimeRow.textContent).toContain('$31.20')
+    })
+
+    it('skips drill section for categories with no provider×model data', () => {
+      // Marco's row has category-only breakdown (no byProviderModel) — drawer
+      // should show no drill sections at all.
+      renderCosts()
+      const marcoRow = document.querySelector(
+        '[data-region="ops-costs-row"][data-customer-id="cust-marco"]',
+      ) as HTMLButtonElement | null
+      expect(marcoRow).not.toBeNull()
+      fireEvent.click(marcoRow!)
+      const drills = document.querySelectorAll(
+        '[data-region="ops-costs-drawer"][data-customer-id="cust-marco"] [data-region="ops-costs-provider-model-drill"]',
+      )
+      expect(drills.length).toBe(0)
+    })
+  })
 })

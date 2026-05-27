@@ -913,6 +913,21 @@ export type OpsCostRow = {
     sttCost: number
     ttsCost: number
     telephonyCost: number
+    /**
+     * Optional drill-down by (provider, model) tuple within each
+     * category. Surface aggregates these in the cost drawer beneath
+     * the category row so the founder can answer "is this 4o-mini
+     * spend or 4o-realtime spend?". Order matters for the surface;
+     * highest-dollar lines render first.
+     */
+    byProviderModel?: Array<{
+      provider: string
+      model: string
+      category: 'llm' | 'stt' | 'tts' | 'telephony'
+      cost: number
+      /** Optional: per-call cost for the row (useful when calls/30d differs by provider). */
+      costPerCall?: number
+    }>
   }
 }
 
@@ -925,7 +940,19 @@ export const OPS_COSTS: OpsCostRow[] = [
     revenueLast30d: 49,
     marginLast30d: -22.4,
     costPerCall: 0.229,
-    breakdown: { llmCost: 42.8, sttCost: 14.3, ttsCost: 9.7, telephonyCost: 4.6 },
+    breakdown: {
+      llmCost: 42.8,
+      sttCost: 14.3,
+      ttsCost: 9.7,
+      telephonyCost: 4.6,
+      byProviderModel: [
+        { provider: 'OpenAI', model: 'gpt-5-realtime', category: 'llm', cost: 31.2, costPerCall: 0.1 },
+        { provider: 'OpenAI', model: 'gpt-5-mini', category: 'llm', cost: 11.6, costPerCall: 0.037 },
+        { provider: 'OpenAI', model: 'whisper-1', category: 'stt', cost: 14.3, costPerCall: 0.046 },
+        { provider: 'ElevenLabs', model: 'eleven_turbo_v2', category: 'tts', cost: 9.7, costPerCall: 0.031 },
+        { provider: 'Telnyx', model: 'voice-pstn', category: 'telephony', cost: 4.6, costPerCall: 0.015 },
+      ],
+    },
   },
   {
     customerId: 'cust-marco',
