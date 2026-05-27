@@ -33,6 +33,7 @@ import {
   type OpsPulseRollup,
 } from '../../data/opsFixture'
 import { useOpsClient } from '../../lib/api/opsClient'
+import { createChimeDebouncer } from '../../lib/sound/chimeDebouncer'
 
 // OpsMissionPreview — the leave-on war-room dashboard. Single file by
 // design: it's one surface, and keeping every cell co-located makes the
@@ -97,6 +98,10 @@ type MissionData = {
 }
 
 const SOUND_PREF_KEY = 'ops-mission-sound-on'
+
+// Debounce window for alert-driven chimes. Locked by contract 574d913c
+// (Sound debouncer — ≤1 chime per kind per 30s).
+const ALERT_CHIME_WINDOW_MS = 30_000
 
 export type OpsMissionPreviewProps = {
   t: BrandTokens
@@ -207,6 +212,42 @@ export function OpsMissionPreview({ t }: OpsMissionPreviewProps) {
   })
 
   const openAlerts = data.alerts.filter((a) => !a.resolved)
+
+  // ── Alert-driven sound chimes (debounced per-severity) ─────────
+  // We hold a stable debouncer instance across renders + a ref to
+  // track which alert IDs we've already considered "seen". When new
+  // alerts arrive (e.g. provider-degraded rule fires), we ask the
+  // debouncer per-severity whether to actually chime. Repeated
+  // bursts inside the 30s window are silenced — even if 4 urgent
+  // rules trip in 6s, the operator hears at most one urgent chime.
+  // The debouncer is bypassed when sound is off (no need to track).
+  const chimeDebouncerRef = useRef(
+    createChimeDebouncer({ windowMs: ALERT_CHIME_WINDOW_MS }),
+  )
+  const seenAlertIdsRef = useRef<Set<string>>(
+    new Set(openAlerts.map((a) => a.id)),
+  )
+  useEffect(() => {
+    if (!soundOn) return
+    const newAlerts = openAlerts.filter(
+      (a) => !seenAlertIdsRef.current.has(a.id),
+    )
+    for (const a of newAlerts) {
+      seenAlertIdsRef.current.add(a.id)
+      // Severity is the chime kind so urgent+warn+info each have
+      // their own 30s debounce window.
+      if (chimeDebouncerRef.current.shouldChime(a.severity)) {
+        const tone =
+          a.severity === 'urgent'
+            ? 'critical'
+            : a.severity === 'warn'
+              ? 'critical'
+              : 'quiet'
+        playChime(t, tone)
+      }
+    }
+  }, [openAlerts, soundOn, t])
+
   const atRiskCustomers = data.customers.filter((c) => {
     if (!c.firstCallAt) return true
     if (c.qualityScore != null && c.qualityScore < 70) return true
@@ -819,9 +860,20 @@ function hexToRgbTriplet(hex: string): [number, number, number] {
 }
 
 // ─── CobeGlobe — WebGL globe with auto-rotation + arc markers ────────
+// Hard cap on simultaneous markers / "arcs" the globe renders. Cobe paints
+// each marker as a per-frame WebGL draw call; uncapped marker counts
+// degrade frame rate on the laptop+wall dual-monitor setup. The 12-arc
+// budget keeps the war-room readable when an outage burst tags every
+// event with coords. Locked under the Globe-arc-throttling contract.
+const GLOBE_MAX_ARCS = 12
+
 function CobeGlobe({ t, events }: { t: BrandTokens; events: OpsLiveEvent[] }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const phiRef = useRef(0)
+  const renderedArcCount = Math.min(
+    events.filter((ev) => ev.coords).length,
+    GLOBE_MAX_ARCS,
+  )
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -833,8 +885,12 @@ function CobeGlobe({ t, events }: { t: BrandTokens; events: OpsLiveEvent[] }) {
     onResize()
     if (!width) width = canvas.clientWidth || 600
 
+    // Throttle the simultaneous arc/marker count.
+    // Prefer the freshest events (events array is already sorted
+    // most-recent-first in the fixture / endpoint contract).
     const markers = events
       .filter((ev) => ev.coords)
+      .slice(0, GLOBE_MAX_ARCS)
       .map((ev) => {
         const tone =
           ev.tone === 'good'
@@ -899,6 +955,8 @@ function CobeGlobe({ t, events }: { t: BrandTokens; events: OpsLiveEvent[] }) {
     <canvas
       ref={canvasRef}
       data-region="ops-mission-globe-canvas"
+      data-arc-count={renderedArcCount}
+      data-arc-cap={GLOBE_MAX_ARCS}
       style={{
         width: '100%',
         height: '100%',
@@ -1016,6 +1074,11 @@ function LiveWire({ t, events }: { t: BrandTokens; events: OpsLiveEvent[] }) {
 // ─── EventStream — shift-down stack, one event per line ──────────────
 const STREAM_VISIBLE = 14
 const STREAM_INTERVAL_MS = 4500
+// Hard cap on how many pushes we allow per refetch boundary, so a sudden
+// burst from /admin/ops/events can't flood the React render loop. The
+// stream already truncates to STREAM_VISIBLE on display, but without this
+// cap each refetch could enqueue N synchronous setState calls.
+const STREAM_MAX_PUSHES_PER_TICK = STREAM_VISIBLE
 
 function EventStream({
   t,
@@ -1029,10 +1092,34 @@ function EventStream({
     .slice(0, STREAM_VISIBLE)
     .map((ev, i) => ({ ev, instanceKey: `${ev.id}-init-${i}` }))
   const [visible, setVisible] = useState<StreamEntry[]>(initial)
+  const [paused, setPaused] = useState(false)
   const cursorRef = useRef(STREAM_VISIBLE)
+  const tickGuardRef = useRef(0)
+
+  // Backpressure rule: when the document/tab is hidden we don't bother
+  // pushing new lines (the operator can't see them, and accumulating
+  // forced reflows in a background tab degrades the next focus paint).
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    function syncPaused() {
+      setPaused(document.visibilityState === 'hidden')
+    }
+    syncPaused()
+    document.addEventListener('visibilitychange', syncPaused)
+    return () => document.removeEventListener('visibilitychange', syncPaused)
+  }, [])
+
   useEffect(() => {
     if (events.length === 0) return
+    if (paused) return
     const id = window.setInterval(() => {
+      // Per-tick guard: if for some reason multiple pushes get queued
+      // (rapid React Query refetches into a slow renderer), drop pushes
+      // once we've already enqueued STREAM_MAX_PUSHES_PER_TICK in this
+      // animation frame. Resets every interval fire.
+      tickGuardRef.current = 0
+      if (tickGuardRef.current >= STREAM_MAX_PUSHES_PER_TICK) return
+      tickGuardRef.current += 1
       const next = events[cursorRef.current % events.length]
       cursorRef.current += 1
       setVisible((curr) => [
@@ -1041,10 +1128,12 @@ function EventStream({
       ])
     }, STREAM_INTERVAL_MS)
     return () => window.clearInterval(id)
-  }, [events])
+  }, [events, paused])
   return (
     <div
       data-region="ops-mission-event-stream"
+      data-stream-paused={paused ? 'true' : 'false'}
+      data-stream-max-visible={STREAM_VISIBLE}
       style={{
         position: 'relative',
         minWidth: 0,

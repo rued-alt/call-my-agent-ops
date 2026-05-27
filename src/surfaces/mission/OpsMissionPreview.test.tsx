@@ -348,4 +348,75 @@ describe('OpsMissionPreview', () => {
       })
     })
   })
+
+  // ── Globe arc throttling (contract: cap simultaneous arcs) ────────
+  describe('globe arc throttling', () => {
+    it('exposes a hard cap data attribute on the globe canvas', () => {
+      renderMission()
+      const canvas = document.querySelector(
+        '[data-region="ops-mission-globe-canvas"]',
+      ) as HTMLElement | null
+      expect(canvas).not.toBeNull()
+      const cap = Number(canvas?.getAttribute('data-arc-cap'))
+      expect(cap).toBeGreaterThan(0)
+    })
+
+    it('never renders more arcs than the cap, regardless of coord event count', () => {
+      renderMission()
+      const canvas = document.querySelector(
+        '[data-region="ops-mission-globe-canvas"]',
+      ) as HTMLElement | null
+      const cap = Number(canvas?.getAttribute('data-arc-cap'))
+      const arcs = Number(canvas?.getAttribute('data-arc-count'))
+      expect(arcs).toBeLessThanOrEqual(cap)
+    })
+
+    it('reports the actual rendered arc count matching min(mappedEvents, cap)', () => {
+      renderMission()
+      const canvas = document.querySelector(
+        '[data-region="ops-mission-globe-canvas"]',
+      ) as HTMLElement | null
+      const cap = Number(canvas?.getAttribute('data-arc-cap'))
+      const arcs = Number(canvas?.getAttribute('data-arc-count'))
+      const mapped = OPS_LIVE_EVENTS.filter((e) => e.coords).length
+      expect(arcs).toBe(Math.min(mapped, cap))
+    })
+  })
+
+  // ── Event-stream backpressure (visibility-paused + max-visible cap) ──
+  describe('event stream backpressure', () => {
+    it('exposes the max-visible cap as a data attribute', () => {
+      renderMission()
+      const stream = document.querySelector(
+        '[data-region="ops-mission-event-stream"]',
+      )
+      expect(stream?.getAttribute('data-stream-max-visible')).toBe('14')
+    })
+
+    it('starts unpaused on a visible document', () => {
+      renderMission()
+      const stream = document.querySelector(
+        '[data-region="ops-mission-event-stream"]',
+      )
+      expect(stream?.getAttribute('data-stream-paused')).toBe('false')
+    })
+
+    it('caps the rendered stream-line count at STREAM_VISIBLE (14)', () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        renderMission()
+        // Run the interval many times — the visible stack still must
+        // never exceed 14 lines (backpressure cap).
+        act(() => {
+          vi.advanceTimersByTime(60_000)
+        })
+        const lines = document.querySelectorAll(
+          '[data-region="ops-mission-stream-line"]',
+        )
+        expect(lines.length).toBeLessThanOrEqual(14)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
 })
