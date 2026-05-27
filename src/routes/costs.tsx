@@ -1,13 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { SignedIn, SignedOut, RedirectToSignIn, useUser } from '@clerk/clerk-react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { TOKENS } from '../lib/brand'
 import { readRoleFromMetadata } from '../lib/auth/roles'
 import { OpsChrome, DEFAULT_OPS_STAFF } from '../components/chrome/OpsChrome'
 import type { OpsStaff, OpsRole } from '../components/chrome/OpsChrome'
+import { OpsCostsPreview } from '../surfaces/costs/OpsCostsPreview'
+import { OPS_ALERTS } from '../data/opsFixture'
 
 export const Route = createFileRoute('/costs')({
   component: CostsRoute,
 })
+
+// Scoped QueryClient for the costs surface.
+// TODO(backend-wireup): when the ops QueryClient is promoted to a
+// shared provider (wrapping the whole app), remove this local instance.
+const costsQueryClient = new QueryClient()
 
 function CostsRoute() {
   return (
@@ -29,17 +37,29 @@ function CostsPage() {
   const staff: OpsStaff = {
     id: user?.id ?? DEFAULT_OPS_STAFF.id,
     fullName: user?.fullName ?? DEFAULT_OPS_STAFF.fullName,
-    initials: (user?.firstName?.[0] ?? '') + (user?.lastName?.[0] ?? '') || DEFAULT_OPS_STAFF.initials,
+    initials:
+      (user?.firstName?.[0] ?? '') + (user?.lastName?.[0] ?? '') ||
+      DEFAULT_OPS_STAFF.initials,
     role,
     twoFactorOn: user?.twoFactorEnabled ?? DEFAULT_OPS_STAFF.twoFactorOn,
   }
+
+  // Count open alerts for the chrome badge (resolved=false only)
+  const openAlertCount = OPS_ALERTS.filter((a) => !a.resolved).length
+
   return (
-    <div style={{ minHeight: '100vh', background: t.color.background }}>
-      <OpsChrome t={t} staff={staff} agentHealth="healthy" />
-      <main style={{ padding: `${t.space.unit * 8}px ${t.space.unit * 5}px`, fontFamily: t.type.bodyFamily, color: t.color.foreground }}>
-        <h1 style={{ fontFamily: t.type.headingFamily, fontSize: 28, fontWeight: t.type.headingWeight }}>Costs</h1>
-        <p style={{ color: t.color.muted, marginTop: t.space.unit * 2 }}>Costs coming soon — per-customer AI spend, margins, cost-per-call.</p>
-      </main>
-    </div>
+    <QueryClientProvider client={costsQueryClient}>
+      <div style={{ minHeight: '100vh', background: t.color.background }}>
+        <OpsChrome
+          t={t}
+          staff={staff}
+          agentHealth="healthy"
+          openAlertCount={openAlertCount}
+        />
+        <main>
+          <OpsCostsPreview t={t} />
+        </main>
+      </div>
+    </QueryClientProvider>
   )
 }
