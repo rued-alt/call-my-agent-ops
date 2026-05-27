@@ -28,6 +28,8 @@ type Props = {
   onClick?: () => void
   dataRegion?: string
   dataAction?: string
+  /** Override computed minWidth (keeps CTA stable across copy swaps). */
+  minWidth?: number | string
 }
 
 const SIZES: Record<BrandedButtonSize, { paddingY: number; paddingX: number; fontSize: number; height: number }> = {
@@ -45,6 +47,7 @@ export function BrandedButton({
   onClick,
   dataRegion,
   dataAction,
+  minWidth,
 }: Props) {
   const s = SIZES[size]
   const glassOn = variant === 'primary'
@@ -98,6 +101,7 @@ export function BrandedButton({
     gap: 6,
     padding: `${s.paddingY}px ${s.paddingX}px`,
     height: s.height,
+    minWidth,
     fontFamily: t.type.bodyFamily,
     fontSize: s.fontSize,
     borderRadius: variant === 'link' || variant === 'ghost' ? 0 : t.radius.md,

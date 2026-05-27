@@ -182,8 +182,15 @@ const mockCall: OpsCallRecord = {
   callerPhone: '(602) 555-0001',
   startedAt: '2026-05-26T10:00:00Z',
   durationSec: 120,
-  transcriptSnippet: 'Caller: Hi — Agent: Hello',
+  outcomeClass: 'booking',
+  autonomy: 'autonomous',
+  agentConfidenceAvg: 0.92,
+  agentConfidenceLow: 0.81,
+  autoQuality: 90,
+  humanRating: null,
+  retried24h: false,
   ownerCorrected: false,
+  transcriptSnippet: 'Caller: Hi — Agent: Hello',
 }
 
 const mockCallWithTurns: OpsCallRecord = {
