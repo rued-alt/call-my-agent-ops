@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: call-my-agent-ops
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_OPS_API_BASE
+        value: https://api.callmyagent.ai
+    routes:
+      # SPA fallback — TanStack Router takes over for every path. No
+      # prerendered marketing routes here (ops is a staff-only app).
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      # Defense in depth — Disallow in robots.txt is the primary signal,
+      # but X-Robots-Tag belt-and-braces against indexing if a crawler
+      # ignores robots. HSTS + nosniff + frame-deny mirror the customer
+      # app baseline.
+      - path: /*
+        name: X-Robots-Tag
+        value: noindex, nofollow
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=63072000; includeSubDomains; preload
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), interest-cohort=()
