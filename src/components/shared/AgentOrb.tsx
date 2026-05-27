@@ -38,11 +38,11 @@ export function AgentOrb({
   }, [glanceTo])
 
   const animationMap: Record<AgentOrbState, string> = {
-    idle: 'cma-rue-breathe 4s ease-in-out infinite',
-    listening: 'cma-rue-spin 2.8s linear infinite',
-    thinking: 'cma-rue-think 1.9s ease-in-out infinite',
-    'just-acted': 'cma-rue-glow 1.8s ease-out infinite',
-    urgent: 'cma-rue-urgent-pulse 1.1s ease-in-out infinite',
+    idle: 'cma-agent-breathe 4s ease-in-out infinite',
+    listening: 'cma-agent-spin 2.8s linear infinite',
+    thinking: 'cma-agent-think 1.9s ease-in-out infinite',
+    'just-acted': 'cma-agent-glow 1.8s ease-out infinite',
+    urgent: 'cma-agent-urgent-pulse 1.1s ease-in-out infinite',
   }
 
   const background =

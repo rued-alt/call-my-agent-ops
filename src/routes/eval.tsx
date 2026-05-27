@@ -29,7 +29,8 @@ function EvalRoute() {
 
 function EvalPage() {
   const t = TOKENS
-  const { user } = useUser()
+  const { user, isLoaded } = useUser()
+  if (!isLoaded) return null
   const role = readRoleFromMetadata(user?.publicMetadata) as OpsRole | null
   if (!role) {
     if (typeof window !== 'undefined') window.location.replace('/')

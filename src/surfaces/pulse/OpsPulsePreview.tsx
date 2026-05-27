@@ -336,7 +336,7 @@ function LiveBadge({ t, count }: { t: BrandTokens; count: number }) {
           borderRadius: '50%',
           background: live ? t.color.primary : t.color.muted,
           animation: live
-            ? 'cma-rue-glow 1600ms ease-in-out infinite'
+            ? 'cma-agent-glow 1600ms ease-in-out infinite'
             : undefined,
         }}
       />

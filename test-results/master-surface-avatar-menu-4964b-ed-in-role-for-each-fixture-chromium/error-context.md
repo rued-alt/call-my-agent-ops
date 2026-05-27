@@ -1,0 +1,357 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: master/surface/avatar-menu.master.spec.ts >> Avatar / staff identity cluster >> role badge text matches the signed-in role for each fixture
+- Location: tests/e2e/master/surface/avatar-menu.master.spec.ts:24:3
+
+# Error details
+
+```
+Error: Failed to sign in with email oncall@test.callmyagent.ai: page.evaluate: Error: Clerk: Failed to sign in: You're already signed in.
+    at eval (eval at evaluate (:302:30), <anonymous>:9:631)
+    at async <anonymous>:328:30
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e10]: Ops
+      - generic [ref=e11]: callmyagent
+    - navigation "Ops sections" [ref=e12]:
+      - link "Pulse 3" [ref=e13] [cursor=pointer]:
+        - /url: /pulse
+        - generic [ref=e14]: Pulse
+        - generic [ref=e15]: "3"
+      - link "Calls" [ref=e16] [cursor=pointer]:
+        - /url: /calls
+        - generic [ref=e17]: Calls
+      - link "Eval 7" [ref=e18] [cursor=pointer]:
+        - /url: /eval
+        - generic [ref=e19]: Eval
+        - generic [ref=e20]: "7"
+      - link "Customers" [ref=e21] [cursor=pointer]:
+        - /url: /customers
+        - generic [ref=e22]: Customers
+      - link "Costs" [ref=e23] [cursor=pointer]:
+        - /url: /costs
+        - generic [ref=e24]: Costs
+    - link "Mission Control" [ref=e25] [cursor=pointer]:
+      - /url: /mission
+      - img [ref=e26]
+    - button "Open audit log" [ref=e31] [cursor=pointer]:
+      - img [ref=e32]
+      - generic [ref=e35]: Audit
+    - generic "Agent stack degraded — see Pulse" [ref=e36]:
+      - generic [ref=e39]: AI degraded
+    - generic [ref=e40]:
+      - generic [ref=e41]:
+        - generic [ref=e42]: Test Owner
+        - generic [ref=e43]:
+          - generic [ref=e44]: Owner
+          - generic [ref=e45]: ·
+          - generic "2FA NOT enabled — enable it" [ref=e46]: 2FA OFF
+      - generic [ref=e47]: T
+  - main [ref=e48]:
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: Day 147
+            - generic [ref=e54]: ·
+            - generic [ref=e55]: 15:55:59
+          - generic [ref=e56]:
+            - generic [ref=e57]: 142,817 calls handled
+            - generic [ref=e58]: ·
+            - generic [ref=e59]: 312 businesses
+            - generic [ref=e60]: ·
+            - generic [ref=e61]: 1,894 hours returned
+          - generic [ref=e62]: Mission Control
+          - generic [ref=e63]:
+            - generic [ref=e64]: Last incident
+            - generic [ref=e65]: 36:19:59
+          - generic [ref=e66]:
+            - generic [ref=e67]: Session 30:00
+            - generic [ref=e68]: ·
+            - generic [ref=e69]: 2FA ✓
+            - generic [ref=e70]: ·
+            - generic [ref=e71]: ● 3 live
+        - generic [ref=e72]:
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e75]: Today
+              - generic [ref=e76]: 64 booked · 5.9% escalated
+            - generic [ref=e78]: $412
+            - generic [ref=e80]: ↑ +$71 vs yest
+            - generic:
+              - img
+          - generic [ref=e81]:
+            - generic [ref=e82]:
+              - generic [ref=e83]: Calls
+              - generic [ref=e84]: 11 escalated · 177 handled by agent
+            - generic [ref=e86]: "188"
+            - generic [ref=e89]: ● 3 live now
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - generic [ref=e92]: MRR
+              - generic [ref=e93]: 24 paying · 6 on trial
+            - generic [ref=e95]: $13.4k
+            - generic [ref=e97]: ↑ +$540 this week
+            - generic:
+              - img
+          - generic [ref=e98]:
+            - generic [ref=e99]:
+              - generic [ref=e100]: Quality
+              - generic [ref=e101]: 5.9% escalation rate · 4.6★ avg CSAT
+            - generic [ref=e102]:
+              - generic [ref=e103]: "85"
+              - generic [ref=e104]: / 100
+            - generic [ref=e106]: ↓ −2 vs yest
+            - generic:
+              - img
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - generic [ref=e110]: North Star · $20k MRR
+              - generic [ref=e111]: $6,580 to go · projected Aug 12
+            - generic [ref=e112]:
+              - generic [ref=e113]: $13,420
+              - generic [ref=e114]: / $20,000
+              - generic [ref=e115]: 67.1%
+          - generic [ref=e118]:
+            - generic [ref=e119]:
+              - generic [ref=e120]: 24h · 217 calls · peak hour 10:00
+              - generic [ref=e121]: 0 — 24
+            - generic [ref=e122]:
+              - generic "0:00 · 2 calls" [ref=e123]
+              - generic "1:00 · 1 calls" [ref=e124]
+              - generic "2:00 · 0 calls" [ref=e125]
+              - generic "3:00 · 1 calls" [ref=e126]
+              - generic "4:00 · 0 calls" [ref=e127]
+              - generic "5:00 · 2 calls" [ref=e128]
+              - generic "6:00 · 4 calls" [ref=e129]
+              - generic "7:00 · 9 calls" [ref=e130]
+              - generic "8:00 · 14 calls" [ref=e131]
+              - generic "9:00 · 18 calls" [ref=e132]
+              - generic "10:00 · 22 calls" [ref=e133]
+              - generic "11:00 · 19 calls" [ref=e134]
+              - generic "12:00 · 17 calls" [ref=e135]
+              - generic "13:00 · 21 calls" [ref=e136]
+              - generic "14:00 · 16 calls" [ref=e137]
+              - generic "15:00 · 18 calls" [ref=e138]
+              - generic "16:00 · 14 calls" [ref=e139]
+              - generic "17:00 · 11 calls" [ref=e140]
+              - generic "18:00 · 7 calls" [ref=e141]
+              - generic "19:00 · 5 calls" [ref=e142]
+              - generic "20:00 · 3 calls" [ref=e143]
+              - generic "21:00 · 4 calls" [ref=e144]
+              - generic "22:00 · 5 calls" [ref=e145]
+              - generic "23:00 · 4 calls" [ref=e146]
+        - generic [ref=e147]:
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - generic [ref=e150]: Live Wire
+              - generic [ref=e152]: 10 events · 9 mapped
+            - generic [ref=e159]:
+              - generic [ref=e160]:
+                - generic [ref=e162]: 21h
+                - generic [ref=e163]: BOOK
+                - generic [ref=e164]: Daniel's Trattoria · Linda P. Wed 7 PM
+                - generic [ref=e165]: New York
+              - generic [ref=e166]:
+                - generic [ref=e168]: 21h
+                - generic [ref=e169]: ESCL
+                - generic [ref=e170]: Sandra Insurance · Brenda Park (complaint)
+                - generic [ref=e171]: Phoenix
+              - generic [ref=e172]:
+                - generic [ref=e174]: 21h
+                - generic [ref=e175]: NEW
+                - generic [ref=e176]: Marco's Plumbing · Solo $49
+                - generic [ref=e177]: Los Angeles
+              - generic [ref=e178]:
+                - generic [ref=e180]: 21h
+                - generic [ref=e181]: PROV
+                - generic [ref=e182]: p95 2.4s · switching primary to Deepgram available
+                - generic [ref=e183]: Infra
+              - generic [ref=e184]:
+                - generic [ref=e186]: 21h
+                - generic [ref=e187]: CHRN
+                - generic [ref=e188]: Tyler HVAC · Solo plan
+                - generic [ref=e189]: Dallas
+              - generic [ref=e190]:
+                - generic [ref=e192]: 22h
+                - generic [ref=e193]: BOOK
+                - generic [ref=e194]: Rosa Family Dental · Diego R. Wed 2 PM
+                - generic [ref=e195]: Miami
+              - generic [ref=e196]:
+                - generic [ref=e198]: 22h
+                - generic [ref=e199]: UPGR
+                - generic [ref=e200]: Wei CPA Group · Solo → Team
+                - generic [ref=e201]: San Francisco
+              - generic [ref=e202]:
+                - generic [ref=e204]: 22h
+                - generic [ref=e205]: TAKE
+                - generic [ref=e206]: Marco's Plumbing · Pacific Plumbing call
+                - generic [ref=e207]: Los Angeles
+              - generic [ref=e208]:
+                - generic [ref=e210]: 22h
+                - generic [ref=e211]: ALRT
+                - generic [ref=e212]: Arnav Auto Body — stuck in setup
+                - generic [ref=e213]: Chicago
+              - generic [ref=e214]:
+                - generic [ref=e216]: 22h
+                - generic [ref=e217]: TRIA
+                - generic [ref=e218]: Jasmine Esthetics · 30-day complete
+                - generic [ref=e219]: Seattle
+          - generic [ref=e220]:
+            - generic [ref=e221]:
+              - generic [ref=e222]:
+                - generic [ref=e223]: Agent Stack
+                - generic [ref=e224]: 9 providers · p95 / err
+              - generic [ref=e225]:
+                - generic [ref=e226]:
+                  - generic [ref=e228]: Telephony
+                  - generic [ref=e230]: Telnyx
+                  - generic [ref=e231]: 142ms
+                  - generic [ref=e232]: 0.0%
+                - generic [ref=e233]:
+                  - generic [ref=e235]: Speech-to-Text
+                  - generic [ref=e236]:
+                    - generic [ref=e237]: OpenAI Whisper
+                    - generic "1 healthy fallback ready" [ref=e238]: "+1"
+                  - generic [ref=e239]: 2.4s
+                  - generic [ref=e240]: 0.4%
+                  - button "Switch primary to Deepgram" [ref=e241] [cursor=pointer]:
+                    - img [ref=e242]
+                - generic [ref=e245]:
+                  - generic [ref=e247]: LLM
+                  - generic [ref=e248]:
+                    - generic [ref=e249]: OpenAI GPT-5
+                    - generic "1 healthy fallback ready" [ref=e250]: "+1"
+                  - generic [ref=e251]: 820ms
+                  - generic [ref=e252]: 0.0%
+                - generic [ref=e253]:
+                  - generic [ref=e255]: Text-to-Speech
+                  - generic [ref=e257]: ElevenLabs
+                  - generic [ref=e258]: 380ms
+                  - generic [ref=e259]: 0.0%
+                - generic [ref=e260]:
+                  - generic [ref=e262]: App / Hosting
+                  - generic [ref=e264]: Render
+                  - generic [ref=e265]: 24ms
+                  - generic [ref=e266]: 0.0%
+                - generic [ref=e267]:
+                  - generic [ref=e269]: Auth
+                  - generic [ref=e271]: Clerk
+                  - generic [ref=e272]: 88ms
+                  - generic [ref=e273]: 0.0%
+                - generic [ref=e274]:
+                  - generic [ref=e276]: Billing
+                  - generic [ref=e278]: Stripe
+                  - generic [ref=e279]: 140ms
+                  - generic [ref=e280]: 0.0%
+            - generic [ref=e281]:
+              - generic [ref=e282]:
+                - generic [ref=e283]: Recent Wins
+                - generic [ref=e284]: 4 · last hour
+              - generic [ref=e285]:
+                - generic [ref=e286]:
+                  - generic [ref=e287]: ★
+                  - generic [ref=e288]: Booking
+                  - generic [ref=e289]: Daniel's Trattoria · Linda P. Wed 7 PM
+                  - generic [ref=e290]: 21h
+                - generic [ref=e291]:
+                  - generic [ref=e292]: ★
+                  - generic [ref=e293]: New customer
+                  - generic [ref=e294]: Marco's Plumbing · Solo $49
+                  - generic [ref=e295]: 21h
+                - generic [ref=e296]:
+                  - generic [ref=e297]: ★
+                  - generic [ref=e298]: Booking
+                  - generic [ref=e299]: Rosa Family Dental · Diego R. Wed 2 PM
+                  - generic [ref=e300]: 22h
+                - generic [ref=e301]:
+                  - generic [ref=e302]: ★
+                  - generic [ref=e303]: Upgrade
+                  - generic [ref=e304]: Wei CPA Group · Solo → Team
+                  - generic [ref=e305]: 22h
+        - generic [ref=e306]:
+          - generic [ref=e307]:
+            - generic [ref=e308]: AI burn · today
+            - generic [ref=e309]:
+              - generic [ref=e310]: $38.70
+              - generic [ref=e311]: spent
+            - generic [ref=e312]:
+              - generic [ref=e313]:
+                - generic [ref=e314]: Cost / call
+                - generic [ref=e315]: $0.206
+              - generic [ref=e316]:
+                - generic [ref=e317]: Margin
+                - generic [ref=e318]: 90.6% · +$373
+          - generic [ref=e319]:
+            - generic [ref=e320]:
+              - generic [ref=e321]: Trial → Paying
+              - generic [ref=e322]:
+                - generic [ref=e323]: 27%
+                - generic [ref=e324]: end-to-end · 30d
+            - generic [ref=e325]:
+              - generic [ref=e326]:
+                - generic [ref=e327]: Signups (30d)
+                - generic [ref=e328]:
+                  - generic [ref=e329]: "41"
+                  - generic [ref=e330]: 100%
+              - generic [ref=e333]:
+                - generic [ref=e334]: ›
+                - generic [ref=e335]: −0
+              - generic [ref=e336]:
+                - generic [ref=e337]: First call
+                - generic [ref=e338]:
+                  - generic [ref=e339]: "34"
+                  - generic [ref=e340]: 83%
+              - generic [ref=e343]:
+                - generic [ref=e344]: ›
+                - generic [ref=e345]: −17
+              - generic [ref=e346]:
+                - generic [ref=e347]: Active (5+ calls)
+                - generic [ref=e348]:
+                  - generic [ref=e349]: "22"
+                  - generic [ref=e350]: 54%
+              - generic [ref=e353]:
+                - generic [ref=e354]: ›
+                - generic [ref=e355]: −35
+              - generic [ref=e356]:
+                - generic [ref=e357]: Converted
+                - generic [ref=e358]:
+                  - generic [ref=e359]: "11"
+                  - generic [ref=e360]: 27%
+          - generic [ref=e363]:
+            - generic [ref=e364]:
+              - generic [ref=e365]: Needs You
+              - generic [ref=e366]: 12 items · 3 alert · 2 risk · 7 eval
+            - generic [ref=e367]:
+              - generic [ref=e368]:
+                - generic [ref=e370]: ALERT
+                - generic [ref=e371]: Tyler HVAC — usage down 70%
+              - generic [ref=e372]:
+                - generic [ref=e374]: ALERT
+                - generic [ref=e375]: Arnav Auto Body — stuck in setup
+              - generic [ref=e376]:
+                - generic [ref=e378]: ALERT
+                - generic [ref=e379]: Whisper latency p95 > 2.4s
+        - generic [ref=e380]:
+          - generic [ref=e381]: Build your empire
+          - generic [ref=e382]: ●
+          - generic [ref=e383]: One answered call at a time
+          - generic [ref=e384]: ●
+          - generic [ref=e385]: Call My Agent
+      - button "Sound off — click to enable" [ref=e386] [cursor=pointer]:
+        - img [ref=e387]
+```

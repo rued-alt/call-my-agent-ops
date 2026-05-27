@@ -51,31 +51,6 @@
   50% { transform: scale(1.12); }
 }
 
-/* Backwards-compatible aliases — kept verbatim so any legacy literal
-   that still references cma-rue-* (e.g. older AgentOrb wiring) continues
-   to animate. New code MUST use cma-agent-*. */
-@keyframes cma-rue-breathe {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.72; transform: scale(0.94); }
-}
-@keyframes cma-rue-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-@keyframes cma-rue-think {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  40% { transform: scale(1.08); opacity: 0.9; }
-  70% { transform: scale(0.96); opacity: 0.82; }
-}
-@keyframes cma-rue-glow {
-  0%, 100% { box-shadow: 0 0 12px var(--color-primary, #7c6ef7)44; }
-  50% { box-shadow: 0 0 28px var(--color-primary, #7c6ef7)88; }
-}
-@keyframes cma-rue-urgent-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.12); }
-}
-
 /* Audit drawer slide-in animation. */
 @keyframes mov-slide-down {
   from { opacity: 0; transform: translateY(-8px); }

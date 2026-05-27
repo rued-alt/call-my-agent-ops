@@ -9,7 +9,17 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test tests/e2e/mission-control.spec.ts",
+    "test:e2e:headed": "playwright test --headed",
+    "test:master": "playwright test tests/e2e/master/",
+    "test:master:smoke": "playwright test tests/e2e/master/smoke/",
+    "test:master:surface": "playwright test tests/e2e/master/surface/",
+    "test:master:journey": "playwright test tests/e2e/master/journey/",
+    "test:master:a11y": "playwright test tests/e2e/master/a11y/",
+    "test:master:headed": "playwright test tests/e2e/master/ --headed",
+    "mcp:token": "tsx scripts/print-clerk-testing-token.ts",
+    "seed:test-users": "tsx scripts/seed-clerk-test-users.ts"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.20.0",
@@ -20,6 +30,8 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@clerk/testing": "^2.0.33",
+    "@playwright/test": "^1.60.0",
     "@tanstack/router-plugin": "^1.85.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
@@ -27,9 +39,11 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
+    "dotenv": "^17.4.2",
     "jsdom": "^25.0.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.22.3",
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "vitest": "^2.1.8"
