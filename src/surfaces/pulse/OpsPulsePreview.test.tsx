@@ -1,15 +1,12 @@
-import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { OpsPulsePreview } from './OpsPulsePreview'
 import { TOKENS } from '../../lib/brand'
-import { hexToRgba } from '../../lib/glass'
 import {
   OPS_PULSE,
   OPS_SINCE_LAST_VISIT,
   OPS_ALERTS,
-  type OpsAlert,
 } from '../../data/opsFixture'
 
 // jsdom normalises hex inline styles to rgb(). Helper to match either form.
@@ -276,11 +273,6 @@ describe('OpsPulsePreview', () => {
   // ── Empty state ───────────────────────────────────────────────────────
   describe('Empty state', () => {
     it('shows "Nothing on fire" when all alerts are resolved', () => {
-      // Render with a custom QueryClient that pre-loads resolved-only alerts
-      const resolvedAlerts: OpsAlert[] = OPS_ALERTS.map((a) => ({
-        ...a,
-        resolved: true,
-      }))
       const qc = new QueryClient({
         defaultOptions: { queries: { retry: false } },
       })
