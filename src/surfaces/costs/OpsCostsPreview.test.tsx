@@ -1,4 +1,3 @@
-import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -167,10 +166,6 @@ describe('OpsCostsPreview', () => {
       const sorted = [...OPS_COSTS].sort(
         (a, b) => a.marginLast30d - b.marginLast30d,
       )
-      const firstRow = document.querySelector(
-        '[data-region="ops-costs-row"]:first-of-type',
-      ) as HTMLElement | null
-      // Find the most-negative customer
       const firstCustomerId = sorted[0].customerId
       const firstRowEl = document.querySelector(
         `[data-customer-id="${firstCustomerId}"]`,
@@ -258,9 +253,6 @@ describe('OpsCostsPreview', () => {
       renderCosts()
       // Find a negative-margin row and verify it shows "−$X.XX"
       const negRecord = OPS_COSTS.find((r) => r.marginLast30d < 0)!
-      const expected = `−$${Math.abs(negRecord.marginLast30d).toFixed(2)}`
-      // The minus sign and dollar are separate text nodes in the JSX but
-      // combine into the element's textContent.
       const negEl = document.querySelector(
         `[data-customer-id="${negRecord.customerId}"]`,
       )!

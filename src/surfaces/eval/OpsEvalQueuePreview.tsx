@@ -137,7 +137,6 @@ export function OpsEvalQueuePreview({ t, staff = DEFAULT_OPS_STAFF }: OpsEvalQue
   const [done, setDone] = useState(false)
 
   const current = queue[cursor]
-  const remaining = total - completedIds.size
 
   useEffect(() => {
     setRating(EMPTY_RATING)
