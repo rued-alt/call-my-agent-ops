@@ -43,8 +43,8 @@
   70% { transform: scale(0.96); opacity: 0.82; }
 }
 @keyframes cma-agent-glow {
-  0%, 100% { box-shadow: 0 0 12px var(--color-primary, #7c6ef7)44; }
-  50% { box-shadow: 0 0 28px var(--color-primary, #7c6ef7)88; }
+  0%, 100% { box-shadow: 0 0 12px var(--color-primary, #2a7a8c)44; }
+  50% { box-shadow: 0 0 28px var(--color-primary, #2a7a8c)88; }
 }
 @keyframes cma-agent-urgent-pulse {
   0%, 100% { transform: scale(1); }
