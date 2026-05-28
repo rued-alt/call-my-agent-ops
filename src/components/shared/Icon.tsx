@@ -1,8 +1,10 @@
 import type { BrandTokens } from '../../lib/brand'
 
 // Minimal icon set needed by OpsChrome + OpsSecurity.
-// Ported from brand-studio src/data/iconLibrary.ts + Icon.tsx.
-// Full icon library can be added later; only include what ops surfaces need.
+// Ported from brand-studio src/data/iconLibrary.ts + Icon.tsx — refined
+// Phosphor-regular family (synced 2026-05-27). Optical stroke bump under
+// 16px. Full icon library can be added later; only include what ops surfaces
+// need.
 
 export type IconName = 'phone' | 'close' | 'warning' | 'info'
 
@@ -16,20 +18,26 @@ type IconEntry = {
 }
 
 const ICON_LIBRARY: Record<IconName, IconEntry> = {
+  // Single-curve handset — the canonical Phosphor "phone" arc.
   phone: {
     paths: [
-      'M5 4 h3 l2 5 -3 2 a12 12 0 0 0 6 6 l2 -3 5 2 v3 a2 2 0 0 1 -2 2 A18 18 0 0 1 3 6 a2 2 0 0 1 2 -2 z',
+      'M6.5 3.5 h2.5 a1 1 0 0 1 1 0.7 l1.5 4.3 a1 1 0 0 1 -0.3 1.1 L9 11 a12 12 0 0 0 4 4 l1.4 -2.2 a1 1 0 0 1 1.1 -0.3 l4.3 1.5 a1 1 0 0 1 0.7 1 V17.5 a3 3 0 0 1 -3 3 A17 17 0 0 1 3.5 6.5 a3 3 0 0 1 3 -3 z',
     ],
   },
   close: {
-    paths: ['M6 6 l12 12', 'M18 6 l-12 12'],
+    paths: ['M6 6 L18 18', 'M18 6 L6 18'],
   },
   warning: {
-    paths: ['M12 3 l10 18 h-20 z', 'M12 10 v5', 'M12 18 v0.01'],
+    // Rounded-corner triangle: explicit arc on each vertex.
+    paths: [
+      'M10.7 4 a1.5 1.5 0 0 1 2.6 0 l8.2 14.3 a1.5 1.5 0 0 1 -1.3 2.2 H3.8 a1.5 1.5 0 0 1 -1.3 -2.2 z',
+      'M12 10 v4.5',
+      'M12 17.5 v0.01',
+    ],
   },
   info: {
-    paths: ['M12 8 v0.01', 'M12 11 v5'],
-    extras: [{ kind: 'circle', cx: 12, cy: 12, r: 9, fill: 'stroke' }],
+    paths: ['M12 11 v5.5', 'M12 8 v0.01'],
+    extras: [{ kind: 'circle', cx: 12, cy: 12, r: 8.5, fill: 'stroke' }],
   },
 }
 
@@ -45,7 +53,7 @@ type Props = {
   title?: string
   /** Extra inline style. */
   style?: React.CSSProperties
-  /** Stroke width override. Default 2. */
+  /** Stroke width override. Default 1.5 (1.75 when size < 16). */
   strokeWidth?: number
 }
 
@@ -56,7 +64,7 @@ export function Icon({
   t: _t,
   title,
   style,
-  strokeWidth = 2,
+  strokeWidth,
 }: Props) {
   const entry = ICON_LIBRARY[name]
   if (!entry) {
@@ -67,6 +75,10 @@ export function Icon({
   }
   const viewBox = entry.viewBox ?? '0 0 24 24'
   const stroke = color ?? 'currentColor'
+  // Optical sizing: small renders get a slightly thicker stroke so they
+  // don't disappear. Caller-passed `strokeWidth` always wins.
+  const resolvedStroke =
+    strokeWidth !== undefined ? strokeWidth : size < 16 ? 1.75 : 1.5
   const labelled = title !== undefined
   return (
     <svg
@@ -84,7 +96,7 @@ export function Icon({
       <g
         fill="none"
         stroke={stroke}
-        strokeWidth={strokeWidth}
+        strokeWidth={resolvedStroke}
         strokeLinecap="round"
         strokeLinejoin="round"
       >
